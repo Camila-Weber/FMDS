@@ -2,11 +2,21 @@
   <div class="container">
     <header>CRUD de Equipamentos</header>
 
-    <div class="tab-buttons" style="margin-bottom: 1rem; display: flex; justify-content: center">
-      <button :class="{ active: activeTab === 'cadastro' }" @click="activeTab = 'cadastro'" style="margin-right: 5px">
+    <div
+      class="tab-buttons"
+      style="margin-bottom: 1rem; display: flex; justify-content: center"
+    >
+      <button
+        :class="{ active: activeTab === 'cadastro' }"
+        @click="activeTab = 'cadastro'"
+        style="margin-right: 5px"
+      >
         Cadastro
       </button>
-      <button :class="{ active: activeTab === 'pesquisa' }" @click="activeTab = 'pesquisa'">
+      <button
+        :class="{ active: activeTab === 'pesquisa' }"
+        @click="activeTab = 'pesquisa'"
+      >
         Pesquisa
       </button>
     </div>
@@ -22,37 +32,45 @@
           <label>
             Nome:
             <input v-model="item.nome" type="text" placeholder="Nome do equipamento" />
+            <span v-if="errors.nome" class="error">{{ errors.nome }}</span>
           </label>
 
           <label>
             Grupo de Categoria:
             <select v-model="item.grupo">
+              <option value="">Selecione</option>
               <option value="ti">TI</option>
               <option value="patrimonio">Patrimônio Geral</option>
               <option value="lab">Laboratório</option>
             </select>
+            <span v-if="errors.grupo" class="error">{{ errors.grupo }}</span>
           </label>
 
           <label>
             Categoria:
             <select v-model="item.categoria" :disabled="!item.grupo">
+              <option value="">Selecione</option>
               <option v-for="cat in categoriasFiltradas" :key="cat" :value="cat">
                 {{ cat }}
               </option>
             </select>
+            <span v-if="errors.categoria" class="error">{{ errors.categoria }}</span>
           </label>
 
           <label>
             Patrimônio:
             <input v-model="item.patrimonio" type="text" placeholder="Patrimônio" />
+            <span v-if="errors.patrimonio" class="error">{{ errors.patrimonio }}</span>
           </label>
 
           <label>
             Status:
             <select v-model="item.status">
+              <option value="">Selecione...</option>
               <option value="disponível">Disponível</option>
               <option value="emprestado">Emprestado</option>
             </select>
+            <span v-if="errors.status" class="error">{{ errors.status }}</span>
           </label>
 
           <button class="primary">
@@ -148,9 +166,25 @@
             </td>
             <td class="acoes">
               <button @click="editItem(i)">
-                <i class="fa-solid fa-pen-to-square"></i>
+                <i class="fa-solid fa-pen-to-square" title="Editar Item"></i>
               </button>
-              <button @click="removeItem(i)"><i class="fa-solid fa-trash"></i></button>
+              <button @click="removeItem(i)">
+                <i class="fa-solid fa-trash" title="Remover item"></i>
+              </button>
+              <button
+                @click="toggleStatus(i)"
+                :class="equip.status !== 'disponível' ? 'status-ok' : 'status-bad'"
+              >
+                <i
+                  class="fa-solid"
+                  :class="equip.status !== 'disponível' ? 'fa-check' : 'fa-times'"
+                  :title="
+                    equip.status !== 'disponível'
+                      ? 'Marcar como disponível'
+                      : 'Marcar como emprestado'
+                  "
+                ></i>
+              </button>
             </td>
           </tr>
         </tbody>
@@ -161,6 +195,18 @@
       <p>Nenhum equipamento encontrado.</p>
     </div>
   </div>
+
+  <div v-if="showErrorModal" class="modal-overlay">
+    <div class="modal">
+      <h3>⚠ Erro de Validação</h3>
+      <ul>
+        <li v-for="(msg, campo) in errors" :key="campo" v-if="msg">
+          {{ msg }}
+        </li>
+      </ul>
+      <button @click="showErrorModal = false">Fechar</button>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -168,6 +214,8 @@ import { ref, reactive, computed, onMounted, watch } from "vue";
 
 const activeTab = ref("cadastro");
 const items = ref([]);
+const showErrorModal = ref(false);
+const autoCloseTimer = ref(null);
 
 const categorias = {
   ti: [
@@ -220,19 +268,83 @@ const filtros = reactive({
   status: "",
 });
 
+const errors = reactive({
+  nome: "",
+  grupo: "",
+  categoria: "",
+  patrimonio: "",
+  status: "",
+});
+
+function validateItem() {
+  errors.nome = item.nome ? "" : "O campo Nome é obrigatório.";
+  errors.grupo = item.grupo ? "" : "Selecione um grupo.";
+  errors.categoria = item.categoria ? "" : "Selecione uma categoria.";
+  errors.patrimonio = item.patrimonio ? "" : "O campo Patrimônio é obrigatório.";
+  errors.status = item.status ? "" : "Selecione o status.";
+
+  return !Object.values(errors).some((e) => e !== "");
+}
+
+watch(
+  () => item.nome,
+  (val) => {
+    if (val) errors.nome = "";
+  }
+);
+
+watch(
+  () => item.grupo,
+  (val) => {
+    if (val) errors.grupo = "";
+  }
+);
+
+watch(
+  () => item.categoria,
+  (val) => {
+    if (val) errors.categoria = "";
+  }
+);
+
+watch(
+  () => item.patrimonio,
+  (val) => {
+    if (val) errors.patrimonio = "";
+  }
+);
+
+watch(
+  () => item.status,
+  (val) => {
+    if (val) errors.status = "";
+  }
+);
+
 function saveItem() {
-  if (!item.nome || !item.grupo || !item.categoria || !item.patrimonio || !item.status) {
-    alert("Preencha todos os campos obrigatórios!");
+  if (!validateItem()) {
+    showValidationErrors();
     return;
   }
+
   if (editIndex === -1) {
     items.value.push({ ...item, id: gerarCodigo() });
   } else {
     items.value[editIndex] = { ...item };
     editIndex = -1;
   }
+
   resetForm();
   setLocalStorage();
+}
+
+function showValidationErrors() {
+  showErrorModal.value = true;
+
+  if (autoCloseTimer.value) clearTimeout(autoCloseTimer.value);
+  autoCloseTimer.value = setTimeout(() => {
+    showErrorModal.value = false;
+  }, 3000);
 }
 
 function editItem(i) {
@@ -248,6 +360,11 @@ function removeItem(i) {
     items.value.splice(i, 1);
     setLocalStorage();
   }
+}
+function toggleStatus(index) {
+  const equip = items.value[index];
+  equip.status = equip.status === "disponível" ? "emprestado" : "disponível";
+  setLocalStorage();
 }
 
 function resetForm() {
@@ -320,14 +437,22 @@ onMounted(() => {
 });
 
 const total = computed(() => items.value.length);
-const totalDisponivel = computed(() => items.value.filter((i) => i.status === "disponível").length);
-const totalEmprestado = computed(() => items.value.filter((i) => i.status === "emprestado").length);
+const totalDisponivel = computed(
+  () => items.value.filter((i) => i.status === "disponível").length
+);
+const totalEmprestado = computed(
+  () => items.value.filter((i) => i.status === "emprestado").length
+);
 const totalCatTI = computed(() => items.value.filter((i) => "ti" === i.grupo).length);
 const totalCatLab = computed(() => items.value.filter((i) => "lab" === i.grupo).length);
-const totalCatPat = computed(() => items.value.filter((i) => "patrimonio" === i.grupo).length);
+const totalCatPat = computed(
+  () => items.value.filter((i) => "patrimonio" === i.grupo).length
+);
 
 const categoriasFiltradas = computed(() => (item.grupo ? categorias[item.grupo] : []));
-const categoriasFiltradasPesquisa = computed(() => filtros.grupo ? categorias[filtros.grupo] : []);
+const categoriasFiltradasPesquisa = computed(() =>
+  filtros.grupo ? categorias[filtros.grupo] : []
+);
 
 const filteredItems = computed(() => {
   return items.value.filter((i) => {
