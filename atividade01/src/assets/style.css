@@ -1,0 +1,194 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #1c1f1d;
+  color: #e0e0e0;
+  font-family: "Segoe UI", sans-serif;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 1200px;
+  margin: auto;
+  padding: 2rem;
+}
+
+header {
+  background: linear-gradient(90deg, #2a2d2b, #1f3128);
+  padding: 1rem;
+  border-radius: 8px;
+  color: #a6e3a1;
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin-bottom: 2rem;
+}
+
+.content {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.card {
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 12px;
+  padding: 1rem;
+  flex: 1;
+  min-width: 300px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+h3 {
+  margin-bottom: 0.8rem;
+  color: #a6e3a1;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+}
+
+input,
+select {
+  background: #333;
+  border: 1px solid #555;
+  padding: 0.6rem;
+  border-radius: 6px;
+  color: #fff;
+  transition: border-color 0.2s;
+}
+
+input:focus,
+select:focus {
+  border-color: #a6e3a1;
+  outline: none;
+}
+
+button {
+  background: #3d5246;
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  background: #4f6d5c;
+}
+
+button.primary {
+  background: #2f4438;
+}
+
+button.primary:hover {
+  background: #3d5246;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.8rem;
+}
+
+th,
+td {
+  padding: 0.7rem;
+  text-align: left;
+}
+
+th {
+  background: #2f4438;
+  color: #a6e3a1;
+}
+
+tr:nth-child(even) {
+  background: #262626;
+}
+
+tr:hover {
+  background: #333333;
+}
+
+.status-ok {
+  color: #a6e3a1;
+  font-weight: bold;
+}
+
+.status-bad {
+  color: #e06b6b;
+  font-weight: bold;
+}
+
+.acoes {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.summary {
+  background: #1f1f1f;
+  border: 1px solid #2f4438;
+  border-radius: 10px;
+  padding: 1rem;
+  min-width: 200px;
+  color: #a6e3a1;
+}
+
+.summary p {
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.tabs button {
+  padding: 5px 15px;
+  cursor: pointer;
+}
+
+.tabs button.active {
+  background: #1976d2;
+  color: white;
+  border: none;
+}
+
+.titulo {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.tab-buttons{
+  display: flex;
+  flex-direction: row;
+  
+}
+
+.tab-buttons button{
+  width: 100%;
+
+}
