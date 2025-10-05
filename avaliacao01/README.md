@@ -1,79 +1,158 @@
-# Vuetify (Default)
+# 🥗 Catálogo de Receitas Saudáveis
 
-This is the official scaffolding tool for Vuetify, designed to give you a head start in building your new Vuetify application. It sets up a base template with all the necessary configurations and standard directory structure, enabling you to begin development without the hassle of setting up the project from scratch.
+Aplicação desenvolvida com **Vue 3 + Vuetify 3**, demonstrando domínio de **componentização**, **vue-router**, **bindings/diretivas** e **persistência local via localStorage**.  
 
-## ❗️ Important Links
+O projeto implementa um **CRUD completo de receitas**, com **login via Google**, **modo escuro**, **filtro avançado**, **estatísticas**, **exportação/importação de dados** e **interface responsiva**.  
 
-- 📄 [Docs](https://vuetifyjs.com/)
-- 🚨 [Issues](https://issues.vuetifyjs.com/)
-- 🏬 [Store](https://store.vuetifyjs.com/)
-- 🎮 [Playground](https://play.vuetifyjs.com/)
-- 💬 [Discord](https://community.vuetifyjs.com)
 
-## 💿 Install
+---
+### 👩‍💻 Equipe
+| Integrante |	Matrícula |
+|------------|-------------|
+| **Camila Weber** | 20230006577 |
 
-Set up your project using your preferred package manager. Use the corresponding command to install the dependencies:
 
-| Package Manager                                                | Command        |
-|---------------------------------------------------------------|----------------|
-| [yarn](https://yarnpkg.com/getting-started)                   | `yarn install` |
-| [npm](https://docs.npmjs.com/cli/v7/commands/npm-install)     | `npm install`  |
-| [pnpm](https://pnpm.io/installation)                          | `pnpm install` |
-| [bun](https://bun.sh/#getting-started)                        | `bun install`  |
+---
 
-After completing the installation, your environment is ready for Vuetify development.
+## 📋 Tema Escolhido
 
-## ✨ Features
+**T1 — Catálogo de Receitas Saudáveis**  
 
-- 🖼️ **Optimized Front-End Stack**: Leverage the latest Vue 3 and Vuetify 3 for a modern, reactive UI development experience. [Vue 3](https://v3.vuejs.org/) | [Vuetify 3](https://vuetifyjs.com/en/)
-- 🗃️ **State Management**: Integrated with [Pinia](https://pinia.vuejs.org/), the intuitive, modular state management solution for Vue.
-- 🚦 **Routing and Layouts**: Utilizes Vue Router for SPA navigation and vite-plugin-vue-layouts for organizing Vue file layouts. [Vue Router](https://router.vuejs.org/) | [vite-plugin-vue-layouts](https://github.com/JohnCampionJr/vite-plugin-vue-layouts)
-- ⚡ **Next-Gen Tooling**: Powered by Vite, experience fast cold starts and instant HMR (Hot Module Replacement). [Vite](https://vitejs.dev/)
-- 🧩 **Automated Component Importing**: Streamline your workflow with unplugin-vue-components, automatically importing components as you use them. [unplugin-vue-components](https://github.com/antfu/unplugin-vue-components)
+Funcionalidades principais:
 
-These features are curated to provide a seamless development experience from setup to deployment, ensuring that your Vuetify application is both powerful and maintainable.
+- CRUD de receitas (título, ingredientes, modo de preparo, tags)  
+- Listagem em **cards** com busca, filtro e avaliação por estrelas  
+- Página **Sobre** com dicas gerais e informações do sistema  
+- Login via **Google OAuth** (Firebase Authentication)  
+- Interface com **tema escuro caramelo** e foco acessível  
+- Persistência de dados no **localStorage** do navegador  
 
-## 💡 Usage
+---
 
-This section covers how to start the development server and build your project for production.
+## ⚙️ Tecnologias Utilizadas
 
-### Starting the Development Server
+| Categoria | Ferramenta |
+|------------|-------------|
+| Framework | [Vue 3](https://vuejs.org/) |
+| UI Library | [Vuetify 3](https://vuetifyjs.com/) |
+| Router | [vue-router 4](https://router.vuejs.org/) |
+| Estado | [Pinia](https://pinia.vuejs.org/) |
+| Autenticação | [Firebase Auth (Google)](https://firebase.google.com/) |
+| Persistência | localStorage |
+| Ícones | [Material Design Icons](https://pictogrammers.com/library/mdi/) |
 
-To start the development server with hot-reload, run the following command. The server will be accessible at [http://localhost:3000](http://localhost:3000):
+
+---
+
+## 🌐 Estrutura de Rotas
+
+| Rota | Componente | Descrição |
+|------|-------------|-----------|
+| `/login` | `Login.vue` | Tela de login com botão Google |
+| `/` | `Home.vue` | Catálogo de receitas com filtro e busca |
+| `/receitas` | `RecipesCrud.vue` | CRUD completo de receitas |
+| `/sobre` | `About.vue` | Dicas gerais e versão do sistema |
+
+> 🔒 As rotas são protegidas: o usuário precisa estar logado para acessar o sistema.
+
+---
+
+## 🧠 Estrutura de Componentes
+
+| Componente | Função |
+|-------------|--------|
+| `RecipeCard.vue` | Exibe receita em card, com botões de editar/remover/avaliar |
+| `LoginButton.vue` | Botão de login com Google (usado no AppBar e Login.vue) |
+| `FilterPanel.vue` | (opcional) Exibe filtros avançados no catálogo |
+| `App.vue` | Layout principal: AppBar, Drawer, troca de tema e navegação |
+| `vuetify.js` | Define tema escuro e claro (caramelo/areia) |
+
+---
+
+## 🧾 Requisitos Atendidos
+
+| Critério | Implementado |
+|-----------|--------------|
+| R1. 3+ páginas/rotas | ✅ Home, CRUD, Sobre, Login |
+| R2. Router | ✅ vue-router configurado |
+| R3. Componentização | ✅ RecipeCard, LoginButton, FilterPanel |
+| R4. Diretivas v-for / v-if / v-bind / v-model | ✅ amplamente utilizadas |
+| R5. UI Vuetify | ✅ AppBar, Drawer, Cards, Buttons, Dialogs, Snackbars |
+| R6. Persistência localStorage | ✅ receitas persistem entre recargas |
+| R7. CRUD funcional | ✅ criar, editar, remover, listar receitas |
+| R8. Projeto executável via `npm run dev` | ✅ |
+| Bônus | ✅ Dark mode, snackbar, diálogos de confirmação, foco acessível |
+
+---
+
+## 💻 Instalação e Execução
+
+### 📦 Pré-requisitos
+
+- **Node.js 20.x** ou superior  
+  (testado com Node 20.11.0)  
+- **npm 9.x** ou **bun/pnpm** (opcional)
+
+---
+
+### 🚀 Passos para rodar localmente
 
 ```bash
-yarn dev
+# 1️⃣ Clonar o repositório
+git clone https://github.com/<SEU-USUARIO>/<SEU-REPOSITORIO>.git
+cd <SEU-REPOSITORIO>
+
+# 2️⃣ Instalar dependências
+npm install
+# ou
+pnpm install
+# ou
+bun install
+
+# 3️⃣ Configurar variáveis do Firebase
+# Crie um arquivo .env na raiz com:
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=...
+VITE_FIREBASE_PROJECT_ID=...
+VITE_FIREBASE_APP_ID=...
+VITE_FIREBASE_STORAGE_BUCKET=...
+VITE_FIREBASE_MESSAGING_SENDER_ID=...
+
+# 4️⃣ Rodar o servidor de desenvolvimento
+npm run dev
+
+A aplicação será executada em:
+👉 http://localhost:3000
 ```
 
-(Repeat for npm, pnpm, and bun with respective commands.)
+---
 
-> Add NODE_OPTIONS='--no-warnings' to suppress the JSON import warnings that happen as part of the Vuetify import mapping. If you are on Node [v21.3.0](https://nodejs.org/en/blog/release/v21.3.0) or higher, you can change this to NODE_OPTIONS='--disable-warning=5401'. If you don't mind the warning, you can remove this from your package.json dev script.
 
-### Building for Production
+### 🔐 Login com Google
 
-To build your project for production, use:
+A autenticação é implementada com Firebase Auth (GoogleProvider).
+Ao logar, o sistema armazena nome e foto do usuário no Pinia Store (auth.js) e exibe no AppBar.
 
-```bash
-yarn build
+### 🪶 Persistência
+
+As receitas são salvas automaticamente no localStorage sob a chave recipes-v1.
+Há opções na página Sobre para exportar/importar backup em JSON ou limpar os dados.
+
+### 🧁 Interface e Tema
+
+O tema principal é escuro caramelo, com foco dourado acessível:
+
+```js
+const coresDark = {
+  dark: true,
+  colors: {
+    background: '#12100E',
+    surface: '#1E1B18',
+    primary: '#8B4513',
+    secondary: '#C08A5C',
+    info: '#CAA472'
+  }
+}
 ```
 
-(Repeat for npm, pnpm, and bun with respective commands.)
-
-Once the build process is completed, your application will be ready for deployment in a production environment.
-
-## 💪 Support Vuetify Development
-
-This project is built with [Vuetify](https://vuetifyjs.com/en/), a UI Library with a comprehensive collection of Vue components. Vuetify is an MIT licensed Open Source project that has been made possible due to the generous contributions by our [sponsors and backers](https://vuetifyjs.com/introduction/sponsors-and-backers/). If you are interested in supporting this project, please consider:
-
-- [Requesting Enterprise Support](https://support.vuetifyjs.com/)
-- [Sponsoring John on Github](https://github.com/users/johnleider/sponsorship)
-- [Sponsoring Kael on Github](https://github.com/users/kaelwd/sponsorship)
-- [Supporting the team on Open Collective](https://opencollective.com/vuetify)
-- [Becoming a sponsor on Patreon](https://www.patreon.com/vuetify)
-- [Becoming a subscriber on Tidelift](https://tidelift.com/subscription/npm/vuetify)
-- [Making a one-time donation with Paypal](https://paypal.me/vuetify)
-
-## 📑 License
-[MIT](http://opensource.org/licenses/MIT)
-
-Copyright (c) 2016-present Vuetify, LLC
+Inclui modo claro alternável pelo ícone de tema na AppBar.
