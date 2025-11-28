@@ -74,6 +74,8 @@ A aplicação utiliza **Login com Google**, portanto é obrigatório criar o arq
 npm install firebase
 ```
 
+## 🗄️ 5. Configuração do Supabase
+
 ```sql
 -- =================================================
 -- SCRIPT COMPLETO — CRIAÇÃO DO BANCO + INSERTS
@@ -231,7 +233,7 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=xxxxxxxxxxxxxxxxxxxxx
 VITE_FIREBASE_APP_ID=xxxxxxxxxxxxxxxxxxxxx
 
 
-## ▶️ 5. Executar o projeto
+## ▶️ 6. Executar o projeto
 
 ```bash
 npm run dev
