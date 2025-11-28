@@ -8,6 +8,7 @@ import ReservationsView from '../views/ReservationsView.vue'
 import LoginView from '../views/LoginView.vue'
 import ReviewsListView from '../views/ReviewsListView.vue'
 import ReviewFormView from '../views/ReviewFormView.vue'
+import MyReviewsView from '../views/MyReviewsView.vue'
 
 const routes = [
   {
@@ -54,10 +55,23 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/my-reviews',
+    name: 'my-reviews',
+    component: MyReviewsView,
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/reviews/new',
     name: 'review-new',
     component: ReviewFormView,
     meta: { requiresAuth: true },
+  },
+  {
+    path: '/reviews/:id/edit',
+    name: 'review-edit',
+    component: ReviewFormView,
+    meta: { requiresAuth: true },
+    props: true,
   },
 ]
 

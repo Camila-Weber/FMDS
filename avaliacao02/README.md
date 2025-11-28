@@ -1,9 +1,9 @@
 # 📚 Sistema de Biblioteca — Gestão de Livros, Reservas e Avaliações
 
 ## 👥 Integrantes do Grupo
-- **Nome 1 – Matrícula XXXXX**
-- **Nome 2 – Matrícula XXXXX**
-- **Nome 3 – Matrícula XXXXX**
+- **Camila Weber – camila.weber@unemat.br (front-end)**
+- **Vitor Sauzen – vitor.sauzen@unemat.br (api)**
+- **Willen souza – willen.silva@unemat.br (banco)**
 
 ---
 

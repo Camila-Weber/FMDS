@@ -46,7 +46,6 @@ export const useBooksStore = defineStore('books', {
     },
 
     async createBook(payload) {
-
       const newId = this.books.length
         ? Math.max(...this.books.map((b) => b.id)) + 1
         : 1
@@ -54,7 +53,8 @@ export const useBooksStore = defineStore('books', {
       this.books.push({
         id: newId,
         ...payload,
-        available: true,
+        available: payload.available ?? true,
+        rating: Number(payload.rating ?? 0),
         createdAt: new Date().toISOString(),
       })
     },

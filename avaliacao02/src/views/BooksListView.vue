@@ -40,7 +40,6 @@
     <v-data-table
       :headers="headers"
       :items="filteredBooks"
-      :items-per-page="itemsPerPage"
       class="elevation-0 books-table"
       :item-class="itemClass"
     >
@@ -101,37 +100,50 @@
           icon
           size="small"
           variant="text"
-          :to="`/books/${item.id}/edit`"
+          :to="`/books/${(item.raw || item).id}/edit`"
         >
           <v-icon>mdi-pencil-outline</v-icon>
         </v-btn>
-
+      
         <v-btn
           icon
           size="small"
           variant="text"
-          @click="removeBook(item.id)"
+          color="error"
+          @click="openDeleteDialog(item)"
         >
           <v-icon>mdi-delete-outline</v-icon>
         </v-btn>
       </template>
-
-      <!-- footer/paginação -->
-      <template #bottom>
-        <v-divider />
-        <div class="d-flex justify-end align-center px-4 py-3">
-          <span class="mr-2 text-caption">Itens por página:</span>
-          <v-select
-            v-model="itemsPerPage"
-            :items="[5, 10, 20]"
-            density="compact"
-            variant="outlined"
-            hide-details
-            style="max-width: 90px"
-          />
-        </div>
-      </template>
     </v-data-table>
+
+    <!-- DIÁLOGO DE CONFIRMAÇÃO DE EXCLUSÃO -->
+    <v-dialog v-model="confirmDialog" max-width="420">
+      <v-card class="pa-4">
+        <v-card-title class="text-h6">
+          Confirmar exclusão
+        </v-card-title>
+
+        <v-card-text>
+          Tem certeza de que deseja excluir o livro
+          <strong>{{ bookToDelete?.title }}</strong>?
+          <br />
+          <span class="text-medium-emphasis text-caption">
+            Esta ação não poderá ser desfeita.
+          </span>
+        </v-card-text>
+
+        <v-card-actions class="justify-end">
+          <v-btn variant="text" @click="cancelDelete">
+            Cancelar
+          </v-btn>
+          <v-btn color="error" @click="confirmDelete">
+            <v-icon start size="18">mdi-delete-outline</v-icon>
+            Excluir
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- BUSCA AVANÇADA -->
     <v-dialog v-model="dialog" max-width="480">
@@ -196,6 +208,9 @@ const booksStore = useBooksStore()
 
 const search = ref('')
 const itemsPerPage = ref(10)
+
+const confirmDialog = ref(false)
+const bookToDelete = ref(null)
 
 // diálogo e filtros da busca avançada
 const dialog = ref(false)
@@ -277,10 +292,23 @@ const clearFilters = () => {
   }
 }
 
-const removeBook = async (id) => {
-  if (confirm('Deseja realmente excluir este livro?')) {
-    await booksStore.deleteBook(id)
-  }
+const openDeleteDialog = (item) => {
+  const raw = item.raw || item
+  bookToDelete.value = raw
+  confirmDialog.value = true
+}
+
+const confirmDelete = async () => {
+  if (!bookToDelete.value) return
+
+  await booksStore.deleteBook(bookToDelete.value.id)
+  confirmDialog.value = false
+  bookToDelete.value = null
+}
+
+const cancelDelete = () => {
+  confirmDialog.value = false
+  bookToDelete.value = null
 }
 
 const itemClass = (item) => {

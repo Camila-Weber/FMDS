@@ -1,6 +1,7 @@
 <template>
   <div>
     <v-row class="gy-6">
+      <!-- BUSCA GLOBAL -->
       <v-col cols="12">
         <v-text-field
           v-model="search"
@@ -9,7 +10,6 @@
           variant="solo"
           density="comfortable"
           class="rounded-lg"
-          @keyup.enter="applySearch"
         >
           <template #append-inner>
             <v-btn icon variant="text" @click="openAdvancedSearch">
@@ -51,26 +51,68 @@
           </v-row>
         </v-card>
 
-        <!-- LISTA DE DISPONÍVEIS -->
+        <!-- LISTAGEM DE LIVROS -->
         <v-card elevation="2" class="rounded-xxl pa-4 mt-6">
           <v-card-title class="d-flex align-center mb-3">
-            <v-icon class="mr-2">mdi-book-check</v-icon>
-            <span class="text-h5 font-weight-medium">Livros disponíveis</span>
+            <v-icon class="mr-2">mdi-book-open-page-variant</v-icon>
+            <span class="text-h5 font-weight-medium">Livros cadastrados</span>
           </v-card-title>
 
-          <v-chip
-            v-for="book in filteredAvailableBooks"
-            :key="book.id"
-            class="ma-1 available-chip"
-            color="primary"
-            variant="tonal"
-          >
-            {{ book.title }} — {{ book.author }}
-          </v-chip>
+          <v-divider class="mb-3" />
 
-          <div v-if="!filteredAvailableBooks.length" class="text-medium-emphasis">
-            Nenhum livro encontrado.
-          </div>
+          <v-list density="comfortable">
+            <v-list-item
+              v-for="book in filteredBooks"
+              :key="book.id"
+              class="book-list-item"
+            >
+              <v-list-item-title class="font-weight-medium">
+                {{ book.title }}
+              </v-list-item-title>
+
+              <v-list-item-subtitle>
+                {{ book.author }}
+              </v-list-item-subtitle>
+
+              <template #append>
+                <div class="d-flex align-center flex-wrap justify-end">
+                  <!-- status -->
+                  <v-chip
+                    size="x-small"
+                    :color="book.available ? 'success' : 'warning'"
+                    variant="flat"
+                    class="mr-2 mb-1"
+                  >
+                    {{ book.available ? 'Disponível' : 'Reservado' }}
+                  </v-chip>
+
+                  <!-- rating (se existir) -->
+                  <div v-if="book.rating" class="d-flex align-center mr-2 mb-1">
+                    <v-icon size="18" color="amber">mdi-star</v-icon>
+                    <span class="text-caption ml-1">
+                      {{ book.rating.toFixed(1) }}
+                    </span>
+                  </div>
+
+                  <!-- atalho para resenha desse livro (se quiser algo mais específico depois) -->
+                  <v-btn
+                    icon
+                    size="small"
+                    :to="isAuthenticated ? `/reviews?bookId=${book.id}` : '/login'"
+                    variant="text"
+                  >
+                    <v-icon>mdi-note-text-outline</v-icon>
+                  </v-btn>
+                </div>
+              </template>
+            </v-list-item>
+
+            <v-list-item v-if="!filteredBooks.length">
+              <v-list-item-title class="text-medium-emphasis">
+                Nenhum livro encontrado.
+              </v-list-item-title>
+            </v-list-item>
+          </v-list>
         </v-card>
       </v-col>
 
@@ -82,7 +124,6 @@
             <span class="text-h5 font-weight-medium">Atalhos</span>
           </v-card-title>
 
-          <!-- Se não estiver autenticado, manda para /login -->
           <v-btn
             block
             color="primary"
@@ -97,16 +138,28 @@
             block
             variant="outlined"
             color="primary"
+            class="mb-3"
             :to="isAuthenticated ? '/reservations' : '/login'"
           >
             <v-icon start>mdi-calendar-check</v-icon>
             Reservas
           </v-btn>
+
+          <!-- NOVO ATALHO: RESENHAS -->
+          <v-btn
+            block
+            variant="outlined"
+            color="primary"
+            :to="isAuthenticated ? '/reviews' : '/login'"
+          >
+            <v-icon start>mdi-note-text-outline</v-icon>
+            Resenhas
+          </v-btn>
         </v-card>
       </v-col>
     </v-row>
 
-    <!-- BUSCA AVANÇADA -->
+    <!-- BUSCA AVANÇADA (mantida) -->
     <v-dialog v-model="dialog" max-width="500">
       <v-card class="pa-4">
         <v-card-title class="text-h6 font-weight-medium">
@@ -166,26 +219,50 @@ const filters = ref({
 })
 
 const openAdvancedSearch = () => (dialog.value = true)
-const applySearch = () => {}
 const applyAdvancedSearch = () => {
   dialog.value = false
 }
 
 const totalBooks = computed(() => booksStore.books.length)
 const availableBooks = computed(() =>
-  booksStore.books.filter(b => b.available)
+  booksStore.books.filter((b) => b.available)
 )
 const reservedCount = computed(
   () => booksStore.books.filter((b) => !b.available).length
 )
 
-const filteredAvailableBooks = computed(() => {
+// LISTAGEM QUE ALIMENTA O CARD "LIVROS CADASTRADOS"
+const filteredBooks = computed(() => {
   const s = search.value.toLowerCase()
-  return availableBooks.value.filter((book) => {
-    return (
-      book.title.toLowerCase().includes(s) ||
-      book.author.toLowerCase().includes(s)
-    )
+  const { title, author, status } = filters.value
+
+  return booksStore.books.filter((b) => {
+    let ok = true
+
+    // busca simples (campo de cima)
+    if (s) {
+      ok =
+        ok &&
+        (b.title.toLowerCase().includes(s) ||
+          b.author.toLowerCase().includes(s))
+    }
+
+    // filtros avançados (opcionais)
+    if (title) {
+      ok = ok && b.title.toLowerCase().includes(title.toLowerCase())
+    }
+
+    if (author) {
+      ok = ok && b.author.toLowerCase().includes(author.toLowerCase())
+    }
+
+    if (status) {
+      const disponivel = b.available
+      if (status === 'Disponível' && !disponivel) ok = false
+      if (status === 'Reservado' && disponivel) ok = false
+    }
+
+    return ok
   })
 })
 </script>
@@ -195,27 +272,27 @@ const filteredAvailableBooks = computed(() => {
   border-radius: 20px;
 }
 
+/* cards de estatística */
 .stat-card {
   background-color: rgb(var(--v-theme-surface));
   border: 1px solid rgba(var(--v-theme-primary), 0.25);
   transition: background-color 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
 }
 
-/* hover tema claro */
 .stat-card:hover {
   background-color: rgba(var(--v-theme-surface), 0.95);
   border-color: rgba(var(--v-theme-primary), 0.35);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
 
-/* hover tema escuro */
-:deep(html.v-theme--libraryDark) .stat-card:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-color: rgba(var(--v-theme-primary), 0.45);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+/* linha da lista de livros */
+.book-list-item {
+  border-radius: 12px;
+  margin-bottom: 4px;
+  transition: background-color 0.2s ease;
 }
 
-.available-chip {
-  font-weight: 500;
+.book-list-item:hover {
+  background-color: rgba(var(--v-theme-primary), 0.06);
 }
 </style>

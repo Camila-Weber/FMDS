@@ -1,3 +1,4 @@
+// src/stores/auth.js
 import { defineStore } from 'pinia'
 import { auth, provider } from '../firebase'
 import {
@@ -5,6 +6,7 @@ import {
   signOut,
   onAuthStateChanged,
 } from 'firebase/auth'
+import router from '../router'   // ✅ IMPORTA O ROUTER
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -55,7 +57,8 @@ export const useAuthStore = defineStore('auth', {
     async logout() {
       await signOut(auth)
       this.user = null
-      router.push('/')
+      // ✅ SEM CONDIÇÃO: SEMPRE VOLTA PARA O DASHBOARD PÚBLICO
+      router.push({ name: 'dashboard' })
     },
   },
 })

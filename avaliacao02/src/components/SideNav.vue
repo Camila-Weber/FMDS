@@ -49,6 +49,13 @@
         to="/reviews"
         :value="$route.path.includes('/reviews')"
       />
+
+      <v-list-item
+        prepend-icon="mdi-account-star"
+        title="Minhas resenhas"
+        to="/my-reviews"
+        :value="$route.path.includes('/my-reviews')"
+      />
     </v-list>
   </v-navigation-drawer>
 </template>

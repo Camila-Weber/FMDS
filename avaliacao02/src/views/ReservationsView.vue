@@ -1,60 +1,101 @@
 <template>
-  <v-row>
-    <v-col cols="12" md="5">
-      <v-card class="mb-4">
-        <v-card-title>
-          <v-icon class="mr-2">event</v-icon>
-          Nova reserva
+  <v-row class="gy-6">
+    <!-- Card de nova reserva -->
+    <v-col cols="12">
+      <v-card class="reservation-card rounded-xxl" elevation="3">
+        <v-card-title class="d-flex align-center mb-2">
+          <v-icon class="mr-2">mdi-calendar-plus</v-icon>
+          <span class="text-h6 font-weight-medium">Nova reserva</span>
         </v-card-title>
-        <v-card-text>
-          <v-form @submit.prevent="createReservation">
-            <v-select
-              v-model="reservation.bookId"
-              :items="availableBooks"
-              item-title="title"
-              item-value="id"
-              label="Livro"
-              required
-            />
-            <v-text-field
-              v-model="reservation.userName"
-              label="Nome do usuário"
-              prepend-inner-icon="person"
-              required
-            />
-            <v-text-field
-              v-model="reservation.days"
-              type="number"
-              label="Dias de empréstimo"
-              prepend-inner-icon="schedule"
-              required
-            />
 
-            <v-btn color="primary" class="mt-3" type="submit">
-              <v-icon start>event_available</v-icon>
-              Reservar
-            </v-btn>
+        <v-divider />
+
+        <v-card-text class="pt-4">
+          <v-form @submit.prevent="createReservation">
+            <v-row dense>
+              <v-col cols="12" md="6">
+                <v-select
+                  v-model="reservation.bookId"
+                  :items="availableBooks"
+                  item-title="title"
+                  item-value="id"
+                  label="Livro"
+                  prepend-inner-icon="mdi-book-open-page-variant"
+                  variant="outlined"
+                  density="comfortable"
+                  required
+                />
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="reservation.userName"
+                  label="Nome do usuário"
+                  prepend-inner-icon="mdi-account"
+                  variant="outlined"
+                  density="comfortable"
+                  required
+                />
+              </v-col>
+
+              <v-col cols="12" md="4">
+                <v-text-field
+                  v-model="reservation.days"
+                  type="number"
+                  label="Dias de empréstimo"
+                  prepend-inner-icon="mdi-timer-outline"
+                  variant="outlined"
+                  density="comfortable"
+                  min="1"
+                  required
+                />
+              </v-col>
+            </v-row>
+
+            <div class="d-flex justify-end mt-4">
+              <v-btn color="primary" type="submit">
+                <v-icon start>mdi-calendar-check</v-icon>
+                Reservar
+              </v-btn>
+            </div>
           </v-form>
         </v-card-text>
       </v-card>
     </v-col>
 
-    <v-col cols="12" md="7">
-      <v-card>
-        <v-card-title>
-          Reservas & devoluções
+    <!-- Card de listagem de reservas -->
+    <v-col cols="12">
+      <v-card class="rounded-xxl" elevation="3">
+        <v-card-title class="d-flex align-center justify-space-between">
+          <div class="d-flex align-center">
+            <v-icon class="mr-2">mdi-calendar-month-outline</v-icon>
+            <span class="text-h6 font-weight-medium">Reservas &amp; devoluções</span>
+          </div>
         </v-card-title>
-        <v-data-table :headers="headers" :items="reservations">
+
+        <v-divider />
+
+        <v-data-table
+          :headers="headers"
+          :items="reservations"
+          class="reservation-table"
+        >
           <template #item.status="{ item }">
-            <v-chip :color="item.isLate ? 'error' : 'success'" size="small">
+            <v-chip
+              :color="item.isLate ? 'error' : 'success'"
+              size="small"
+              variant="flat"
+            >
               {{ item.isLate ? 'Atrasado' : 'Dentro do prazo' }}
             </v-chip>
           </template>
+
           <template #item.daysLeft="{ item }">
-            <span :class="item.isLate ? 'text-error' : ''">
+            <span :class="item.isLate ? 'text-error font-weight-medium' : ''">
               {{ item.daysLeft }} dia(s)
             </span>
           </template>
+
           <template #item.actions="{ item }">
             <v-btn
               size="small"
@@ -62,7 +103,7 @@
               variant="outlined"
               @click="returnBook(item.id)"
             >
-              <v-icon start>assignment_turned_in</v-icon>
+              <v-icon start>mdi-archive-arrow-up-outline</v-icon>
               Devolver
             </v-btn>
           </template>
@@ -71,6 +112,7 @@
     </v-col>
   </v-row>
 </template>
+
 
 <script setup>
 import { computed, reactive, ref } from 'vue'

@@ -8,13 +8,15 @@
     <v-divider />
 
     <v-card-text>
-      <v-form @submit.prevent="handleSubmit">
+      <v-form ref="formRef" @submit.prevent="handleSubmit">
         <v-row class="mt-2" dense>
+          
           <v-col cols="12" md="8">
             <v-text-field
               v-model="form.title"
-              label="Título"
+              label="Título *"
               prepend-inner-icon="mdi-format-title"
+              :rules="[rules.required]"
               required
             />
           </v-col>
@@ -22,39 +24,36 @@
           <v-col cols="12" md="4">
             <v-text-field
               v-model="form.author"
-              label="Autor"
+              label="Autor *"
               prepend-inner-icon="mdi-account"
+              :rules="[rules.required]"
               required
             />
           </v-col>
 
-          <v-col cols="12" md="12">
+          <v-col cols="12">
             <v-autocomplete
               v-model="form.genres"
               :items="genresOptions"
-              label="Gêneros"
+              label="Gêneros *"
               prepend-inner-icon="mdi-bookmark-multiple-outline"
               multiple
               chips
               closable-chips
               hide-selected
+              :rules="[rules.requiredArray]"
+              required
             />
           </v-col>
+
         </v-row>
 
         <div class="mt-4 d-flex justify-end">
-          <v-btn
-            variant="text"
-            class="mr-2"
-            @click="$router.back()"
-          >
+          <v-btn variant="text" class="mr-2" @click="$router.back()">
             Cancelar
           </v-btn>
 
-          <v-btn
-            type="submit"
-            color="primary"
-          >
+          <v-btn type="submit" color="primary">
             <v-icon start>mdi-content-save-outline</v-icon>
             Salvar
           </v-btn>
@@ -68,12 +67,12 @@
 import { reactive, computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBooksStore } from '../stores/books'
-// futuramente, você pode buscar do backend:
-// import { api } from '../services/api'
 
 const route = useRoute()
 const router = useRouter()
 const booksStore = useBooksStore()
+
+const formRef = ref(null)
 
 const isEdit = computed(() => !!route.params.id)
 
@@ -85,14 +84,14 @@ const form = reactive({
   available: true,
 })
 
+const rules = {
+  required: (v) => !!v || 'Campo obrigatório',
+  requiredArray: (v) => (v?.length > 0) || 'Selecione pelo menos 1 gênero',
+}
+
 const genresOptions = ref([])
 
 const loadGenres = async () => {
-  // FUTURO: buscar do backend
-  // const { data } = await api.get('/genres')
-  // genresOptions.value = data
-
-  // MOCK local (até ter backend)
   genresOptions.value = [
     'Romance',
     'Drama',
@@ -121,6 +120,11 @@ onMounted(() => {
 })
 
 const handleSubmit = async () => {
+  if (!formRef.value) return
+
+  const { valid } = await formRef.value.validate()
+  if (!valid) return
+
   const payload = {
     title: form.title,
     author: form.author,
@@ -134,6 +138,7 @@ const handleSubmit = async () => {
   } else {
     await booksStore.createBook(payload)
   }
+
   router.push({ name: 'books-list' })
 }
 </script>

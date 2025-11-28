@@ -12,7 +12,6 @@
 
     <v-spacer />
 
-    <!-- Botão de troca de tema -->
     <v-btn icon variant="text" class="mr-2" @click="toggleTheme">
       <v-icon>
         {{ isDark ? 'mdi-white-balance-sunny' : 'mdi-moon-waning-crescent' }}
@@ -55,17 +54,11 @@ const email = computed(() => authStore.userEmail)
 const photo = computed(() => authStore.userPhoto)
 
 const logout = async () => {
-  await authStore.logout()
-
-  if (route.meta.requiresAuth && authStore.isAuthenticated) {
-    router.push({ name: 'dashboard' })
-  }
+  await authStore.logout()   
 }
 
-// ---- Tema claro/escuro ----
 const theme = useTheme()
 
-// computed que espelha se o tema atual é dark
 const isDark = computed({
   get: () => theme.global.current.value.dark,
   set: (val) => {
@@ -77,7 +70,6 @@ const toggleTheme = () => {
   isDark.value = !isDark.value
 }
 
-// opcional: lembrar preferência no localStorage
 onMounted(() => {
   const saved = localStorage.getItem('theme')
   if (saved === 'dark') {

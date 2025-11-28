@@ -1,7 +1,7 @@
 <template>
   <v-card class="rounded-xxl pa-4">
     <v-card-title class="d-flex justify-space-between align-center">
-      <span class="text-h5">Resenhas</span>
+      <span class="text-h5">Minhas resenhas</span>
 
       <v-btn color="primary" to="/reviews/new">
         <v-icon start>mdi-pencil-plus</v-icon>
@@ -11,32 +11,24 @@
 
     <v-divider class="my-4" />
 
-    <!-- SEM RESENHAS -->
-    <div v-if="!enrichedReviews.length" class="text-medium-emphasis text-center">
-      Nenhuma resenha cadastrada.
+    <div v-if="!myReviews.length" class="text-medium-emphasis text-center py-6">
+      Você ainda não cadastrou nenhuma resenha.
     </div>
 
-    <!-- COM RESENHAS -->
     <div v-else>
       <!-- FILTROS AVANÇADOS -->
       <v-row class="mb-4" dense>
-        <!-- LIVRO: apenas livros do sistema -->
         <v-col cols="12" md="4">
-          <v-autocomplete
-            v-model="filters.bookId"
-            :items="bookOptions"
-            item-title="label"
-            item-value="id"
+          <v-text-field
+            v-model="filters.book"
             label="Livro"
             prepend-inner-icon="mdi-book"
             density="comfortable"
             variant="outlined"
             hide-details
-            clearable
           />
         </v-col>
 
-        <!-- AUTOR -->
         <v-col cols="12" md="4">
           <v-text-field
             v-model="filters.author"
@@ -48,19 +40,6 @@
           />
         </v-col>
 
-        <!-- USUÁRIO -->
-        <v-col cols="12" md="4">
-          <v-text-field
-            v-model="filters.user"
-            label="Usuário"
-            prepend-inner-icon="mdi-account-circle"
-            density="comfortable"
-            variant="outlined"
-            hide-details
-          />
-        </v-col>
-
-        <!-- AVALIAÇÃO -->
         <v-col cols="12" md="4">
           <v-select
             v-model="filters.rating"
@@ -75,30 +54,23 @@
         </v-col>
       </v-row>
 
-      <!-- LISTA DE RESENHAS FILTRADAS -->
-      <div
-        v-if="!filteredReviews.length"
-        class="text-medium-emphasis text-center py-6"
-      >
+      <div v-if="!filteredMyReviews.length" class="text-medium-emphasis text-center py-6">
         Nenhuma resenha encontrada com os filtros informados.
       </div>
 
       <v-list v-else class="py-0">
         <v-list-item
-          v-for="review in filteredReviews"
+          v-for="review in filteredMyReviews"
           :key="review.id"
           class="mb-2 rounded-lg review-item"
         >
           <v-list-item-title class="d-flex align-center justify-space-between">
             <div>
               <span class="font-weight-medium">
-                {{ review.displayTitle }}
+                {{ review.bookTitle }}
               </span>
-              <span
-                v-if="review.displayAuthor"
-                class="text-medium-emphasis ml-2"
-              >
-                — {{ review.displayAuthor }}
+              <span v-if="review.bookAuthor" class="text-medium-emphasis ml-2">
+                — {{ review.bookAuthor }}
               </span>
             </div>
 
@@ -117,15 +89,17 @@
           </v-list-item-title>
 
           <v-list-item-subtitle class="mt-1">
-            <div class="d-flex flex-wrap align-center">
+            <div class="d-flex flex-wrap align-center mb-1">
               <v-chip
                 size="x-small"
                 class="mr-2 mb-1"
-                color="primary"
+                :color="review.isPublic ? 'success' : 'grey'"
                 variant="tonal"
               >
-                <v-icon start size="14">mdi-account</v-icon>
-                {{ review.userName || 'Usuário não informado' }}
+                <v-icon start size="14">
+                  {{ review.isPublic ? 'mdi-eye-outline' : 'mdi-eye-off-outline' }}
+                </v-icon>
+                {{ review.isPublic ? 'Pública' : 'Privada' }}
               </v-chip>
 
               <span class="text-caption text-medium-emphasis mb-1">
@@ -138,63 +112,70 @@
               </span>
             </div>
 
-            <div class="mt-2 text-body-2">
+            <div class="mt-1 text-body-2">
               {{ review.comment || 'Sem texto de resenha.' }}
             </div>
           </v-list-item-subtitle>
+
+          <template #append>
+            <v-btn
+              icon
+              variant="text"
+              size="small"
+              :to="`/reviews/${review.id}/edit`"
+            >
+              <v-icon>mdi-pencil-outline</v-icon>
+            </v-btn>
+
+            <v-btn
+              icon
+              variant="text"
+              size="small"
+              color="error"
+              @click="openDeleteDialog(review)"
+            >
+              <v-icon>mdi-delete-outline</v-icon>
+            </v-btn>
+          </template>
         </v-list-item>
       </v-list>
     </div>
+
+    <!-- DIÁLOGO DE EXCLUSÃO -->
+    <v-dialog v-model="confirmDialog" max-width="420">
+      <v-card class="pa-4">
+        <v-card-title class="text-h6">
+          Excluir resenha
+        </v-card-title>
+        <v-card-text>
+          Tem certeza que deseja excluir a resenha de
+          <strong>{{ reviewToDelete?.bookTitle }}</strong>?
+        </v-card-text>
+        <v-card-actions class="justify-end">
+          <v-btn variant="text" @click="cancelDelete">
+            Cancelar
+          </v-btn>
+          <v-btn color="error" @click="confirmDelete">
+            <v-icon start size="18">mdi-delete-outline</v-icon>
+            Excluir
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-card>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { useReviewsStore } from '../stores/reviews'
-import { useBooksStore } from '../stores/books'
+import { useAuthStore } from '../stores/auth'
 
 const reviewsStore = useReviewsStore()
-const booksStore = useBooksStore()
+const authStore = useAuthStore()
 
-// opções de livros do sistema (usadas no filtro)
-const bookOptions = computed(() =>
-  (booksStore.books || []).map((b) => ({
-    id: b.id,
-    label: b.author ? `${b.title} — ${b.author}` : b.title,
-    title: b.title,
-    author: b.author || '',
-  }))
-)
-
-// mapa id -> livro para enriquecer as resenhas
-const booksMap = computed(() => {
-  const map = new Map()
-  ;(booksStore.books || []).forEach((b) => {
-    map.set(b.id, b)
-  })
-  return map
-})
-
-// resenhas “enriquecidas” com título e autor vindos do booksStore
-const enrichedReviews = computed(() => {
-  const base = reviewsStore.reviews || []
-  const map = booksMap.value
-
-  return base.map((rev) => {
-    const book = rev.bookId ? map.get(rev.bookId) : null
-    return {
-      ...rev,
-      displayTitle: book?.title || rev.bookTitle || 'Livro não encontrado',
-      displayAuthor: book?.author || rev.bookAuthor || '',
-    }
-  })
-})
-
-// filtros avançados
 const filters = ref({
-  bookId: null,
+  book: '',
   author: '',
-  user: '',
   rating: null,
 })
 
@@ -206,44 +187,61 @@ const ratingOptions = [
   { title: '5 ★', value: 5 },
 ]
 
-// aplica filtros campo a campo em cima das resenhas enriquecidas
-const filteredReviews = computed(() => {
-  const f = filters.value
+const myReviews = computed(() => {
+  const uid = authStore.user?.uid
+  if (!uid) return []
+  return (reviewsStore.reviews || []).filter((r) => r.userId === uid)
+})
 
-  return enrichedReviews.value.filter((rev) => {
+const filteredMyReviews = computed(() => {
+  const { book, author, rating } = filters.value
+
+  return myReviews.value.filter((rev) => {
     let ok = true
 
-    // livro (por id)
-    if (f.bookId) {
-      ok = ok && Number(rev.bookId) === Number(f.bookId)
-    }
-
-    // autor (texto)
-    if (f.author) {
+    if (book) {
       ok =
         ok &&
-        (rev.displayAuthor || '')
+        (rev.bookTitle || '')
           .toLowerCase()
-          .includes(f.author.toLowerCase())
+          .includes(book.toLowerCase())
     }
 
-    // usuário
-    if (f.user) {
+    if (author) {
       ok =
         ok &&
-        (rev.userName || '')
+        (rev.bookAuthor || '')
           .toLowerCase()
-          .includes(f.user.toLowerCase())
+          .includes(author.toLowerCase())
     }
 
-    // avaliação
-    if (f.rating) {
-      ok = ok && Number(rev.rating) === Number(f.rating)
+    if (rating) {
+      ok = ok && Number(rev.rating) === Number(rating)
     }
 
     return ok
   })
 })
+
+// diálogo de exclusão
+const confirmDialog = ref(false)
+const reviewToDelete = ref(null)
+
+const openDeleteDialog = (review) => {
+  reviewToDelete.value = review
+  confirmDialog.value = true
+}
+
+const cancelDelete = () => {
+  confirmDialog.value = false
+  reviewToDelete.value = null
+}
+
+const confirmDelete = async () => {
+  if (!reviewToDelete.value) return
+  await reviewsStore.deleteReview(reviewToDelete.value.id)
+  cancelDelete()
+}
 </script>
 
 <style scoped>
