@@ -1,9 +1,9 @@
 # 📚 Sistema de Biblioteca — Gestão de Livros, Reservas e Avaliações
 
 ## 👥 Integrantes do Grupo
-- **Camila Weber – Matrícula 20230006577**
-- **VITOR EMANUEL Silva SAUZEN  – Matrícula 20230013295**
-- **Willen Silva de Souza – Matrícula 20230020039**
+- **CAMILA WEBER – Matrícula 20230006577**
+- **VITOR EMANUEL SILVA SAUZEN  – Matrícula 20230013295**
+- **WILLEN SILVA DE SOUZA – Matrícula 20230020039**
 
 ---
 
