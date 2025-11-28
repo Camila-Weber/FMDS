@@ -1,9 +1,9 @@
 # 📚 Sistema de Biblioteca — Gestão de Livros, Reservas e Avaliações
 
 ## 👥 Integrantes do Grupo
-- **Nome 1 – Matrícula XXXXX**
-- **Nome 2 – Matrícula XXXXX**
-- **Nome 3 – Matrícula XXXXX**
+- **Camila Weber – Matrícula 20230006577**
+- **VITOR EMANUEL Silva SAUZEN  – Matrícula 20230013295**
+- **Willen Silva de Souza – Matrícula 20230020039**
 
 ---
 
@@ -31,6 +31,7 @@ A proposta visa simplificar o gerenciamento interno de acervo, oferecendo uma ex
 - **Vuetify 3**
 - **Pinia (gerenciamento de estado)**
 - **Firebase Authentication (Google Login)**
+- **Supabase — armazena todos os dados da aplicação (usuários, livros, reservas e avaliações)**
 - **Material Design Icons (MDI)**
 
 ---
@@ -71,6 +72,154 @@ A aplicação utiliza **Login com Google**, portanto é obrigatório criar o arq
 
 ```bash
 npm install firebase
+```
+
+```sql
+-- =================================================
+-- SCRIPT COMPLETO — CRIAÇÃO DO BANCO + INSERTS
+-- 100% SEGURO PARA EXECUTAR NO SUPABASE
+-- =================================================
+
+CREATE SCHEMA IF NOT EXISTS public;
+SET search_path TO public;
+
+-- =========================
+-- 1) users
+-- =========================
+CREATE TABLE IF NOT EXISTS public.users (
+  id           BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  google_sub   VARCHAR(64) UNIQUE,
+  name         VARCHAR(150) NOT NULL,
+  email        VARCHAR(150) NOT NULL UNIQUE,
+  photo_url    VARCHAR(255),
+  role         VARCHAR(20) DEFAULT 'user',
+  created_at   TIMESTAMP DEFAULT NOW(),
+  updated_at   TIMESTAMP DEFAULT NOW()
+);
+
+-- =========================
+-- 2) books
+-- =========================
+CREATE TABLE IF NOT EXISTS public.books (
+  id              BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  title           VARCHAR(255) NOT NULL,
+  author          VARCHAR(255) NOT NULL,
+  synopsis        TEXT,
+  published_year  INT,
+  isbn            VARCHAR(20) UNIQUE,
+  pages           INT,
+  cover_url       VARCHAR(255),
+
+  available       BOOLEAN NOT NULL DEFAULT TRUE,
+
+  avg_rating      DECIMAL(3,1) DEFAULT 0.0,
+  reviews_count   INT DEFAULT 0,
+
+  created_at      TIMESTAMP DEFAULT NOW(),
+  updated_at      TIMESTAMP DEFAULT NOW()
+);
+
+-- =========================
+-- 3) genres
+-- =========================
+CREATE TABLE IF NOT EXISTS public.genres (
+  id          BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  name        VARCHAR(100) NOT NULL UNIQUE,
+  description TEXT
+);
+
+-- =========================
+-- 4) book_genres (N:N)
+-- =========================
+CREATE TABLE IF NOT EXISTS public.book_genres (
+  book_id  BIGINT NOT NULL REFERENCES public.books(id) ON DELETE CASCADE,
+  genre_id BIGINT NOT NULL REFERENCES public.genres(id) ON DELETE CASCADE,
+  PRIMARY KEY (book_id, genre_id)
+);
+
+-- =========================
+-- 5) reservations
+-- =========================
+CREATE TABLE IF NOT EXISTS public.reservations (
+  id            BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  user_id       BIGINT NOT NULL REFERENCES public.users(id),
+  book_id       BIGINT NOT NULL REFERENCES public.books(id),
+
+  status        VARCHAR(20) NOT NULL, -- reserved, borrowed, returned, cancelled
+  reserved_at   TIMESTAMP NOT NULL DEFAULT NOW(),
+  borrowed_at   TIMESTAMP,
+  due_date      TIMESTAMP,
+  returned_at   TIMESTAMP,
+  cancelled_at  TIMESTAMP,
+  notes         TEXT,
+
+  created_at    TIMESTAMP DEFAULT NOW(),
+  updated_at    TIMESTAMP DEFAULT NOW()
+);
+
+-- =========================
+-- 6) reviews
+-- =========================
+CREATE TABLE IF NOT EXISTS public.reviews (
+  id          BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  user_id     BIGINT NOT NULL REFERENCES public.users(id),
+  book_id     BIGINT NOT NULL REFERENCES public.books(id),
+
+  rating      SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  title       VARCHAR(255),
+  body        TEXT NOT NULL,
+  is_public   BOOLEAN NOT NULL DEFAULT TRUE,
+
+  created_at  TIMESTAMP DEFAULT NOW(),
+  updated_at  TIMESTAMP DEFAULT NOW(),
+
+  CONSTRAINT uq_reviews_user_book UNIQUE (user_id, book_id)
+);
+
+-- =========================
+-- Índices úteis
+-- =========================
+CREATE INDEX IF NOT EXISTS idx_books_title ON public.books (title);
+CREATE INDEX IF NOT EXISTS idx_books_author ON public.books (author);
+CREATE INDEX IF NOT EXISTS idx_reviews_book_id ON public.reviews (book_id);
+CREATE INDEX IF NOT EXISTS idx_reservations_user_id ON public.reservations (user_id);
+CREATE INDEX IF NOT EXISTS idx_reservations_book_id ON public.reservations (book_id);
+
+-- =========================
+-- INSERT — GÊNEROS LITERÁRIOS
+-- =========================
+INSERT INTO genres (name, description) VALUES
+('Romance', 'Narrativas focadas em relações humanas, emoções e desenvolvimento dos personagens.'),
+('Ficção Científica', 'Histórias baseadas em avanços científicos, tecnologia e cenários futuristas.'),
+('Fantasia', 'Narrativas que envolvem elementos mágicos, criaturas imaginárias e mundos fictícios.'),
+('Aventura', 'Enredos centrados em jornadas, desafios e exploração de ambientes desconhecidos.'),
+('Terror', 'Textos que buscam causar medo, tensão e desconforto no leitor.'),
+('Suspense', 'Histórias com clima de tensão crescente e expectativa pelo desfecho.'),
+('Mistério', 'Obras envolvendo enigmas, investigação e revelação de segredos.'),
+('Drama', 'Narrativas focadas em conflitos emocionais e situações intensas da vida humana.'),
+('Comédia', 'Textos voltados ao humor e à diversão, com situações engraçadas e leves.'),
+('Poesia', 'Gênero que utiliza linguagem artística, ritmo e métrica para expressão literária.'),
+('Biografia', 'Relatos sobre a vida de uma pessoa real escritos por outro autor.'),
+('Autobiografia', 'Relato da vida de uma pessoa escrito por ela mesma.'),
+('História', 'Livros que analisam, explicam ou narram fatos e eventos históricos reais.'),
+('Filosofia', 'Textos que abordam questões existenciais, éticas, lógicas e de pensamento humano.'),
+('Autoajuda', 'Obras destinadas ao desenvolvimento pessoal e bem-estar emocional.'),
+('Religião', 'Livros que tratam de doutrinas, crenças e práticas religiosas.'),
+('Ciências Humanas', 'Obras relacionadas a áreas como sociologia, psicologia, antropologia e educação.'),
+('Ciências Exatas', 'Livros sobre matemática, física, química e áreas correlatas.'),
+('Crônicas', 'Textos curtos que comentam situações cotidianas com linguagem leve.'),
+('Conto', 'Narrativas curtas e objetivas, geralmente com poucos personagens.'),
+('Infantil', 'Livros destinados ao público infantil, com linguagem acessível e temas lúdicos.'),
+('Jovem Adulto', 'Obras voltadas ao público jovem, abordando temas de amadurecimento.'),
+('Distopia', 'Histórias que apresentam sociedades opressoras ou futuros decadentes.'),
+('Cyberpunk', 'Subgênero futurista com foco em tecnologia avançada e cenários urbanos decadentes.'),
+('Steampunk', 'Obras ambientadas em realidades alternativas com tecnologia movida a vapor.'),
+('Chick-lit', 'Narrativas leves voltadas ao público feminino, envolvendo humor e cotidiano.'),
+('Policial', 'Livros focados em crimes, investigações e resolução de casos.'),
+('Thriller', 'Enredos acelerados e tensos, geralmente envolvendo perseguições e perigos.'),
+('Erótico', 'Obras com foco em relações íntimas e conteúdo sensual.'),
+('Clássicos', 'Livros consagrados pela crítica e pela história da literatura.');
+
 ```
 Crie o arquivo na raiz do projeto:
 
