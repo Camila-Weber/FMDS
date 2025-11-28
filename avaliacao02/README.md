@@ -219,7 +219,6 @@ INSERT INTO genres (name, description) VALUES
 ('Chick-lit', 'Narrativas leves voltadas ao público feminino, envolvendo humor e cotidiano.'),
 ('Policial', 'Livros focados em crimes, investigações e resolução de casos.'),
 ('Thriller', 'Enredos acelerados e tensos, geralmente envolvendo perseguições e perigos.'),
-('Erótico', 'Obras com foco em relações íntimas e conteúdo sensual.'),
 ('Clássicos', 'Livros consagrados pela crítica e pela história da literatura.');
 
 ```
