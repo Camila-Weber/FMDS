@@ -132,28 +132,17 @@ const handleSubmit = async () => {
     available: form.available,
   }
 
-  /** IGNORE (Está incompleta) - INTERAÇÃO DIRETA COM A API 
-    let BaseURL = 'http://localhost:3001/books'
-    let url = isEdit.value ? `${BaseURL}/${route.params.id}` : BaseURL
-    let method = isEdit.value ? 'PUT' : 'POST'
+  try {
+    if (isEdit.value) {
+      await booksStore.updateBook(Number(route.params.id), payload)
+    } else {
+      await booksStore.createBook(payload)
+    }
 
-    await fetch(url, {
-      method: method,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    })
-  */
-  
-
-  if (isEdit.value) {
-    await booksStore.updateBook(Number(route.params.id), payload)
-  } else {
-    await booksStore.createBook(payload)
+    router.push({ name: 'books-list' })
+  } catch (error) {
+    console.error('Erro ao salvar livro:', error)
   }
-
-  router.push({ name: 'books-list' })
 }
 </script>
 

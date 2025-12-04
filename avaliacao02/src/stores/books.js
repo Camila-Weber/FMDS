@@ -1,27 +1,10 @@
 import { defineStore } from 'pinia'
 
+const BASE_URL = 'http://localhost:3001/books'
+
 export const useBooksStore = defineStore('books', {
   state: () => ({
-    books: [
-      {
-        id: 1,
-        title: 'Dom Casmurro',
-        author: 'Machado de Assis',
-        available: true,
-        genres: ['Romance', 'Clássico'],
-        rating: 4.5,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: 2,
-        title: 'Grande Sertão: Veredas',
-        author: 'Guimarães Rosa',
-        available: false,
-        genres: ['Romance', 'Ficção histórica'],
-        rating: 4.8,
-        createdAt: new Date().toISOString(),
-      },
-    ],
+    books: [],
     loading: false,
   }),
 
@@ -35,9 +18,9 @@ export const useBooksStore = defineStore('books', {
     async fetchBooks() {
       this.loading = true
       try {
-        // Exemplo para futuro backend:
-        // const { data } = await api.get('/books')
-        // this.books = data
+        const res = await fetch(BASE_URL)
+        const data = await res.json()
+        this.books = data.data
       } catch (e) {
         console.error('Erro ao buscar livros', e)
       } finally {
@@ -46,31 +29,55 @@ export const useBooksStore = defineStore('books', {
     },
 
     async createBook(payload) {
-      const newId = this.books.length
-        ? Math.max(...this.books.map((b) => b.id)) + 1
-        : 1
-
-      this.books.push({
-        id: newId,
-        ...payload,
-        available: payload.available ?? true,
-        rating: Number(payload.rating ?? 0),
-        createdAt: new Date().toISOString(),
-      })
+      try {
+        const res = await fetch(BASE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        const data = await res.json()
+        if (data.success) {
+          this.books.push(data.data) // adiciona o livro retornado pela API
+        } else {
+          console.error('Erro ao criar livro', data.error)
+        }
+      } catch (e) {
+        console.error('Erro ao criar livro', e)
+      }
     },
 
+
     async updateBook(id, payload) {
-      const index = this.books.findIndex((b) => b.id === id)
-      if (index !== -1) {
-        this.books[index] = {
-          ...this.books[index],
-          ...payload,
+      try {
+        const res = await fetch(`${BASE_URL}/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        const data = await res.json()
+        if (data.success) {
+          const index = this.books.findIndex((b) => b.id === id)
+          if (index !== -1) this.books[index] = data.data
+        } else {
+          console.error('Erro ao atualizar livro', data.error)
         }
+      } catch (e) {
+        console.error('Erro ao atualizar livro', e)
       }
     },
 
     async deleteBook(id) {
-      this.books = this.books.filter((b) => b.id !== id)
+      try {
+        const res = await fetch(`${BASE_URL}/${id}`, { method: 'DELETE' })
+        const data = await res.json()
+        if (data.success) {
+          this.books = this.books.filter((b) => b.id !== id)
+        } else {
+          console.error('Erro ao deletar livro', data.error)
+        }
+      } catch (e) {
+        console.error('Erro ao deletar livro', e)
+      }
     },
   },
 })

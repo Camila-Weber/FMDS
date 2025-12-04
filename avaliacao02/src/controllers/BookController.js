@@ -20,18 +20,19 @@ export const createBook = async (req, res) => {
   }
 
   try {
-    const { data, error } = await supabase
-      .from("books")
-      .insert([{
-        title,
-        author,
-        avg_rating,
-        available
-      }])
-      .select()
-      .single();
+  // Chama a função que faz a transação no DB
+    const { data, error } = await supabase.rpc('insert_book_genres', {
+      _title: title,
+      _author: author,
+      _available: available,
+      _avg_rating: avg_rating,
+      _genre_ids: genres
+    });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Erro ao inserir via RPC:', error);
+      throw error;
+    }
 
     res.status(201).json({ success: true, data: data[0] });
   } catch (error) {

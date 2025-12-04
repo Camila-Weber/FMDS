@@ -75,6 +75,10 @@ export default defineConfig({
     ],
   },
   server: {
-    port: 3000,
+    port: 3002,
+    hmr: {
+      host: 'localhost', // host usado para WebSocket
+      port: 3002,        // mesma porta do Vite
+    },
   },
 })

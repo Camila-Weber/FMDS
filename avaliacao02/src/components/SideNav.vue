@@ -13,7 +13,7 @@
       </v-avatar>
 
       <div>
-        <div class="text-h6 font-weight-bold">Sistema</div>
+        <div class="text-h6 font-weight-bold">OpenLibrary</div>
         <small class="text-medium-emphasis">Biblioteca</small>
       </div>
     </v-sheet>
