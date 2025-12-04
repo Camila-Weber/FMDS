@@ -41,6 +41,8 @@
               chips
               closable-chips
               hide-selected
+              item-title="name"
+              item-value="id"
               :rules="[rules.requiredArray]"
               required
             />
@@ -92,14 +94,11 @@ const rules = {
 const genresOptions = ref([])
 
 const loadGenres = async () => {
-  genresOptions.value = [
-    'Romance',
-    'Drama',
-    'Clássico',
-    'Ficção histórica',
-    'Fantasia',
-    'Suspense',
-  ]
+  // Busca os gêneros da API
+  const response = await fetch('http://localhost:3001/genres')
+  const data = await response.json()
+
+  genresOptions.value = data.data;
 }
 
 onMounted(() => {
@@ -132,6 +131,21 @@ const handleSubmit = async () => {
     rating: form.rating || 0,
     available: form.available,
   }
+
+  /** IGNORE (Está incompleta) - INTERAÇÃO DIRETA COM A API 
+    let BaseURL = 'http://localhost:3001/books'
+    let url = isEdit.value ? `${BaseURL}/${route.params.id}` : BaseURL
+    let method = isEdit.value ? 'PUT' : 'POST'
+
+    await fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+  */
+  
 
   if (isEdit.value) {
     await booksStore.updateBook(Number(route.params.id), payload)

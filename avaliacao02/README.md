@@ -234,8 +234,14 @@ VITE_FIREBASE_APP_ID=xxxxxxxxxxxxxxxxxxxxx
 
 ## ▶️ 6. Executar o projeto
 
+### ▶️ 6.1 Executar o FrontEnd
 ```bash
 npm run dev
+```
+
+### ▶️ 6.2 Executar o BackEnd
+```bash
+npm run serve
 ```
 
 ## 🗂 Estrutura do Projeto
@@ -243,11 +249,20 @@ npm run dev
 src/
 ├── assets/
 ├── components/
+├── controllers/
+│ └── GenreController.js
+├── db/
+│ ├── db.js
+├── docs/
+│ ├── swagger.js
 ├── stores/
 │ ├── auth.js
 │ └── books.js
 ├── router/
 │ └── index.js
+├── routes/
+│ └── BookRoutes.js
+│ └── GenreRoutes.js
 ├── views/
 │ ├── DashboardView.vue
 │ ├── BooksListView.vue
@@ -257,4 +272,5 @@ src/
 │ └── PublicHomeView.vue ← página pública (não autenticada)
 ├── firebase.js
 ├── App.vue
+├── index.js
 └── main.js

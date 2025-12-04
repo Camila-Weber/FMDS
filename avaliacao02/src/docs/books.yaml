@@ -1,0 +1,60 @@
+tags:
+  - name: Books
+    description: API para gerenciar livros
+
+paths:
+  /books:
+    get:
+      summary: Retorna uma lista de livros
+      tags: [Books]
+      responses:
+        200:
+          description: Lista de livros obtida com sucesso
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Book'
+
+  /books/{id}:
+    get:
+      summary: Retorna um livro por ID
+      tags: [Books]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Livro encontrado
+        404:
+          description: Livro não encontrado
+
+    put:
+      summary: Atualiza um livro por ID
+      tags: [Books]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Livro atualizado com sucesso
+
+    delete:
+      summary: Deleta um livro por ID
+      tags: [Books]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Livro deletado com sucesso
