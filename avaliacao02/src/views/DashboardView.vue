@@ -265,6 +265,15 @@ const filteredBooks = computed(() => {
     return ok
   })
 })
+
+onMounted(async () => {
+  try {
+    await booksStore.fetchBooks()
+  } catch (e) {
+    // exibir notificação amigável (substitua por toast)
+    console.error('Erro ao carregar livros:', e)
+  }
+})
 </script>
 
 <style scoped>

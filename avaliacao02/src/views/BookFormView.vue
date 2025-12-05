@@ -127,9 +127,9 @@ const handleSubmit = async () => {
   const payload = {
     title: form.title,
     author: form.author,
-    genres: [...form.genres],
-    rating: form.rating || 0,
     available: form.available,
+    rating: form.rating || 0,
+    genres: [...form.genres],
   }
 
   try {

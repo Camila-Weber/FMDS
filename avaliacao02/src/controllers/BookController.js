@@ -9,7 +9,7 @@ export const createBook = async (req, res) => {
     title,
     author,
     available = true,
-    avg_rating = 0
+    rating = 0
   } = req.body;
 
   // exempo - genres: Array [ 4, 6 ]
@@ -25,7 +25,7 @@ export const createBook = async (req, res) => {
       _title: title,
       _author: author,
       _available: available,
-      _avg_rating: avg_rating,
+      _avg_rating: rating,
       _genre_ids: genres
     });
 

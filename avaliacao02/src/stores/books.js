@@ -1,11 +1,19 @@
 import { defineStore } from 'pinia'
 
-const BASE_URL = 'http://localhost:3001/books'
+// Cadastrar uma variável em .env para a URL da API
+// VITE_API_BASE_URL=https://localhost:3001
+if (!import.meta.env.VITE_API_BASE_URL) {
+  throw new Error('VITE_API_BASE_URL não está definida nas variáveis de ambiente')
+}
+
+const API_URL = import.meta.env.VITE_API_BASE_URL
+const BOOKS_URL = `${API_URL}/books`
 
 export const useBooksStore = defineStore('books', {
   state: () => ({
     books: [],
     loading: false,
+    _fetchController: null,
   }),
 
   getters: {
@@ -18,7 +26,10 @@ export const useBooksStore = defineStore('books', {
     async fetchBooks() {
       this.loading = true
       try {
-        const res = await fetch(BASE_URL)
+        const res = await fetch(BOOKS_URL,
+          { method: 'GET'  
+          }
+        )
         const data = await res.json()
         this.books = data.data
       } catch (e) {
@@ -30,7 +41,7 @@ export const useBooksStore = defineStore('books', {
 
     async createBook(payload) {
       try {
-        const res = await fetch(BASE_URL, {
+        const res = await fetch(BOOKS_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -49,7 +60,7 @@ export const useBooksStore = defineStore('books', {
 
     async updateBook(id, payload) {
       try {
-        const res = await fetch(`${BASE_URL}/${id}`, {
+        const res = await fetch(`${BOOKS_URL}/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -68,7 +79,7 @@ export const useBooksStore = defineStore('books', {
 
     async deleteBook(id) {
       try {
-        const res = await fetch(`${BASE_URL}/${id}`, { method: 'DELETE' })
+        const res = await fetch(`${BOOKS_URL}/${id}`, { method: 'DELETE' })
         const data = await res.json()
         if (data.success) {
           this.books = this.books.filter((b) => b.id !== id)
