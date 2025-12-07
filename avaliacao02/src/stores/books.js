@@ -8,6 +8,7 @@ if (!import.meta.env.VITE_API_BASE_URL) {
 
 const API_URL = import.meta.env.VITE_API_BASE_URL
 const BOOKS_URL = `${API_URL}/books`
+const GENRES_URL = `${API_URL}/genres`
 
 export const useBooksStore = defineStore('books', {
   state: () => ({
@@ -23,12 +24,28 @@ export const useBooksStore = defineStore('books', {
   },
 
   actions: {
+    async fetchGenres() {
+      this.loading = true
+      try {
+        const res = await fetch(GENRES_URL,
+          { method: 'GET' }
+        )
+        const data = await res.json()
+        return data
+      } catch (e) {
+        console.error('Erro ao buscar gêneros', e)
+
+      } finally {
+        this.loading = false
+      }
+    },
+
+
     async fetchBooks() {
       this.loading = true
       try {
         const res = await fetch(BOOKS_URL,
-          { method: 'GET'  
-          }
+          { method: 'GET' }
         )
         const data = await res.json()
         this.books = data.data
@@ -39,6 +56,7 @@ export const useBooksStore = defineStore('books', {
       }
     },
 
+
     async createBook(payload) {
       try {
         const res = await fetch(BOOKS_URL, {
@@ -47,6 +65,7 @@ export const useBooksStore = defineStore('books', {
           body: JSON.stringify(payload),
         })
         const data = await res.json()
+        
         if (data.success) {
           this.books.push(data.data) // adiciona o livro retornado pela API
         } else {
@@ -61,7 +80,7 @@ export const useBooksStore = defineStore('books', {
     async updateBook(id, payload) {
       try {
         const res = await fetch(`${BOOKS_URL}/${id}`, {
-          method: 'PUT',
+          method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         })
