@@ -49,6 +49,7 @@ export const useBooksStore = defineStore('books', {
         )
         const data = await res.json()
         this.books = data.data
+
       } catch (e) {
         console.error('Erro ao buscar livros', e)
       } finally {
@@ -58,11 +59,19 @@ export const useBooksStore = defineStore('books', {
 
 
     async createBook(payload) {
+      // payload.genres = [{id,name}, ...] (do BookForm)
+      const genreIds = (payload.genres || []).map(g => (g && typeof g === 'object' ? g.id : g))
+
+      const bodyToApi = {
+        ...payload,
+        genres: genreIds // API recebe apenas ids
+      }
+
       try {
         const res = await fetch(BOOKS_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(bodyToApi),
         })
         const data = await res.json()
         
@@ -78,13 +87,22 @@ export const useBooksStore = defineStore('books', {
 
 
     async updateBook(id, payload) {
+      // payload.genres = [{id,name}, ...] (do BookForm)
+      const genreIds = (payload.genres || []).map(g => (g && typeof g === 'object' ? g.id : g))
+
+      const bodyToApi = {
+        ...payload,
+        genres: genreIds // API recebe apenas ids
+      }
       try {
         const res = await fetch(`${BOOKS_URL}/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(bodyToApi),
         })
+
         const data = await res.json()
+
         if (data.success) {
           const index = this.books.findIndex((b) => b.id === id)
           if (index !== -1) this.books[index] = data.data

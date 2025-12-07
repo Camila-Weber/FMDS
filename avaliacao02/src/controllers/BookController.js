@@ -16,7 +16,7 @@ export const createBook = async (req, res) => {
   const rating = 0; // valor padrão
   
   if (!title || !author || genres.length === 0) {
-    return res.status(400).json({ error: "Campos obrigatórios ausentes: title, author e genres são necessários." });
+    return res.status(400).json({ success: false, error: "Campos obrigatórios ausentes: title, author e genres são necessários." });
   }
 
   try {
@@ -39,19 +39,10 @@ export const createBook = async (req, res) => {
       return res.status(500).json({ success: false, error: 'RPC não retornou o livro criado' });
     }
 
-    const createdBook = {
-      id: data.id,
-      title: data.title,
-      author: data.author,
-      genres: data.genres.map(g => g.name),
-      available: data.available,
-      rating: data.avg_rating
-    };
-
-    res.status(201).json({ success: true, data: createdBook });
+    res.status(201).json({ success: true, data: data });
   } catch (error) {
     console.error("Erro ao criar livro:", error);
-    res.status(500).json({ error: "Erro ao criar livro" });
+    res.status(500).json({ success: false, error: "Erro ao criar livro" });
   }
 };
 
@@ -67,7 +58,8 @@ export const getBooks = async (req, res) => {
         genres:book_genres (
           genres ( id, name )
         )
-      `);
+      `)
+      .order("id", { ascending: true });
 
     if (error) throw error;
     
@@ -81,7 +73,7 @@ export const getBooks = async (req, res) => {
     res.status(200).json({ success: true, data: booksTransformed });
   } catch (error) {
     console.error("Erro ao obter livros:", error);
-    res.status(500).json({ error: "Erro ao obter livros" });
+    res.status(500).json({ success: false, error: "Erro ao obter livros" });
   }
 };
 
@@ -104,13 +96,13 @@ export const getBookById = async (req, res) => {
       .single();
 
     if (error) {
-      return res.status(404).json({ error: "Livro não encontrado" });
+      return res.status(404).json({ success: false, error: "Livro não encontrado" });
     }
 
     res.status(200).json({ success: true, data });
   } catch (error) {
     console.error("Erro ao obter livro:", error);
-    res.status(500).json({ error: "Erro ao obter livro" });
+    res.status(500).json({ success: false, error: "Erro ao obter livro" });
   }
 };
 
@@ -128,15 +120,13 @@ export const updateBook = async (req, res) => {
   const bookId = Number(id); // garante que é número
 
   if (!title || !author) {
-    return res.status(400).json({ error: "Campos obrigatórios ausentes: title e author são necessários." });
+    return res.status(400).json({ success: false, error: "Campos obrigatórios ausentes: title e author são necessários." });
   }
   
   const genresArray = Array.isArray(genres) ? genres : null;
   if (genresArray === null || genresArray === 0) {
-    return res.status(400).json({ error: "Campo 'genres' é obrigatório." });
+    return res.status(400).json({ success: false, error: "Campo 'genres' é obrigatório." });
   }
-
-  console.log('Atualizando livro ID:', bookId, 'com dados:', { title, author, genres: genresArray });
 
   try {
     // Chama a RPC que atualiza o livro e suas associações de gênero de forma atômica
@@ -157,19 +147,10 @@ export const updateBook = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Livro não encontrado ou RPC não retornou dados.' });
     }
 
-    const updatedBook = {
-      id: data.id,
-      title: data.title,
-      author: data.author,
-      genres: Array.isArray(data.genres) ? data.genres.map(g => g.name) : [],
-      available: data.available,
-      rating: data.avg_rating
-    };
-
-    res.status(200).json({ success: true, data: updatedBook });
+    res.status(200).json({ success: true, data: data });
   } catch (error) {
     console.error("Erro ao atualizar livro:", error);
-    res.status(500).json({ error: "Erro ao atualizar livro" });
+    res.status(500).json({ success: false, error: "Erro ao atualizar livro" });
   }
 };
 
@@ -187,12 +168,12 @@ export const deleteBook = async (req, res) => {
       .eq("id", id);
 
     if (error) {
-      return res.status(404).json({ error: "Livro não encontrado" });
+      return res.status(404).json({ success: false, error: "Livro não encontrado" });
     }
 
     res.status(200).json({ success: true, message: "Livro deletado com sucesso" });
   } catch (error) {
     console.error("Erro ao deletar livro:", error);
-    res.status(500).json({ error: "Erro ao deletar livro" });
+    res.status(500).json({ success: false, error: "Erro ao deletar livro" });
   }
 };

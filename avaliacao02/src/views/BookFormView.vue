@@ -123,14 +123,19 @@ const handleSubmit = async () => {
   const { valid } = await formRef.value.validate()
   if (!valid) return
 
+  // transforma form.genres (ids) em [{id,name}]
+  const genresPayload = (form.genres || []).map(g => {
+    const found = genresOptions.value.find(x => x.id === g)
+    return { id: found.id, name: found.name }
+  })
+
   const payload = {
     title: form.title,
     author: form.author,
-    genres: [...form.genres],
+    genres: genresPayload,
   }
 
   try {
-    console.log('genres no payload:', payload.genres)
     if (isEdit.value) {
       await booksStore.updateBook(Number(route.params.id), payload)
     } else {

@@ -65,7 +65,7 @@
             color="primary"
             variant="tonal"
           >
-            {{ g }}
+            {{ g.name }}
           </v-chip>
 
           <span
@@ -238,7 +238,6 @@ const genresOptions = computed(() => {
   const set = new Set()
   booksStore.books.forEach((b) => {
     (b.genres || []).forEach((g) => set.add(g.id))
-    
   })
   return Array.from(set)
 })
