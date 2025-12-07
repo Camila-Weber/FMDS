@@ -11,16 +11,15 @@
 
     <v-divider class="my-4" />
 
-    <!-- SEM RESENHAS -->
-    <div v-if="!enrichedReviews.length" class="text-medium-emphasis text-center">
+    <div
+      v-if="!enrichedReviews.length"
+      class="text-medium-emphasis text-center"
+    >
       Nenhuma resenha cadastrada.
     </div>
 
-    <!-- COM RESENHAS -->
     <div v-else>
-      <!-- FILTROS AVANÇADOS -->
       <v-row class="mb-4" dense>
-        <!-- LIVRO: apenas livros do sistema -->
         <v-col cols="12" md="4">
           <v-autocomplete
             v-model="filters.bookId"
@@ -89,7 +88,9 @@
           :key="review.id"
           class="mb-2 rounded-lg review-item"
         >
-          <v-list-item-title class="d-flex align-center justify-space-between">
+          <v-list-item-title
+            class="d-flex align-center justify-space-between"
+          >
             <div>
               <span class="font-weight-medium">
                 {{ review.displayTitle }}
@@ -149,14 +150,13 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useReviewsStore } from '../stores/reviews'
 import { useBooksStore } from '../stores/books'
 
 const reviewsStore = useReviewsStore()
 const booksStore = useBooksStore()
 
-// opções de livros do sistema (usadas no filtro)
 const bookOptions = computed(() =>
   (booksStore.books || []).map((b) => ({
     id: b.id,
@@ -166,7 +166,6 @@ const bookOptions = computed(() =>
   }))
 )
 
-// mapa id -> livro para enriquecer as resenhas
 const booksMap = computed(() => {
   const map = new Map()
   ;(booksStore.books || []).forEach((b) => {
@@ -175,22 +174,24 @@ const booksMap = computed(() => {
   return map
 })
 
-// resenhas “enriquecidas” com título e autor vindos do booksStore
 const enrichedReviews = computed(() => {
   const base = reviewsStore.reviews || []
   const map = booksMap.value
 
   return base.map((rev) => {
-    const book = rev.bookId ? map.get(rev.bookId) : null
+    const book = rev.book_id ? map.get(rev.book_id) : null
     return {
       ...rev,
-      displayTitle: book?.title || rev.bookTitle || 'Livro não encontrado',
-      displayAuthor: book?.author || rev.bookAuthor || '',
+      bookId: rev.book_id,
+      displayTitle: book?.title || rev.title || 'Livro não encontrado',
+      displayAuthor: book?.author || '',
+      comment: rev.body || '',
+      createdAt: rev.created_at,
+      userName: rev.user_name || 'Usuário não informado',
     }
   })
 })
 
-// filtros avançados
 const filters = ref({
   bookId: null,
   author: '',
@@ -206,19 +207,16 @@ const ratingOptions = [
   { title: '5 ★', value: 5 },
 ]
 
-// aplica filtros campo a campo em cima das resenhas enriquecidas
 const filteredReviews = computed(() => {
   const f = filters.value
 
   return enrichedReviews.value.filter((rev) => {
     let ok = true
 
-    // livro (por id)
     if (f.bookId) {
       ok = ok && Number(rev.bookId) === Number(f.bookId)
     }
 
-    // autor (texto)
     if (f.author) {
       ok =
         ok &&
@@ -227,7 +225,6 @@ const filteredReviews = computed(() => {
           .includes(f.author.toLowerCase())
     }
 
-    // usuário
     if (f.user) {
       ok =
         ok &&
@@ -236,13 +233,17 @@ const filteredReviews = computed(() => {
           .includes(f.user.toLowerCase())
     }
 
-    // avaliação
     if (f.rating) {
       ok = ok && Number(rev.rating) === Number(f.rating)
     }
 
     return ok
   })
+})
+
+onMounted(async () => {
+  await booksStore.fetchBooks()
+  await reviewsStore.fetchAllReviews()
 })
 </script>
 

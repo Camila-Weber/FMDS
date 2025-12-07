@@ -1,4 +1,4 @@
-import { createReview, getReviews, updateReview, deleteReview } from "../controllers/ReviewController.js";
+import { createReview, getReviews, updateReview, deleteReview, getReviewById } from "../controllers/ReviewController.js";
 import { Router } from "express";
 const router = Router();
 
@@ -7,5 +7,6 @@ router.post("/", createReview);
 router.put("/:id", updateReview);
 router.patch("/:id", updateReview);
 router.delete("/:id", deleteReview);
+router.get("/:id", getReviewById);
 
 export default router;

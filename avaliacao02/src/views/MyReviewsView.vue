@@ -166,12 +166,37 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useReviewsStore } from '../stores/reviews'
 import { useAuthStore } from '../stores/auth'
+import { useBooksStore } from '../stores/books'
 
 const reviewsStore = useReviewsStore()
 const authStore = useAuthStore()
+const booksStore = useBooksStore()
+
+const booksMap = computed(() => {
+  const map = new Map()
+  ;(booksStore.books || []).forEach((b) => map.set(b.id, b))
+  return map
+})
+
+const myRaw = computed(() => reviewsStore.myReviews || [])
+
+const myReviews = computed(() => {
+  const map = booksMap.value
+  return myRaw.value.map((rev) => {
+    const book = rev.book_id ? map.get(rev.book_id) : null
+    return {
+      ...rev,
+      bookTitle: book?.title || rev.title || 'Livro não encontrado',
+      bookAuthor: book?.author || '',
+      comment: rev.body || '',
+      isPublic: rev.is_public,
+      createdAt: rev.created_at,
+    }
+  })
+})
 
 const filters = ref({
   book: '',
@@ -185,13 +210,7 @@ const ratingOptions = [
   { title: '3 ★', value: 3 },
   { title: '4 ★', value: 4 },
   { title: '5 ★', value: 5 },
-]
-
-const myReviews = computed(() => {
-  const uid = authStore.user?.uid
-  if (!uid) return []
-  return (reviewsStore.reviews || []).filter((r) => r.userId === uid)
-})
+];
 
 const filteredMyReviews = computed(() => {
   const { book, author, rating } = filters.value
@@ -223,7 +242,6 @@ const filteredMyReviews = computed(() => {
   })
 })
 
-// diálogo de exclusão
 const confirmDialog = ref(false)
 const reviewToDelete = ref(null)
 
@@ -240,8 +258,17 @@ const cancelDelete = () => {
 const confirmDelete = async () => {
   if (!reviewToDelete.value) return
   await reviewsStore.deleteReview(reviewToDelete.value.id)
+  await booksStore.fetchBooks()
   cancelDelete()
 }
+
+onMounted(async () => {
+  const uid = authStore.user?.uid || authStore.user?.id
+  if (!uid) return
+  await booksStore.fetchBooks()
+  await reviewsStore.fetchMyReviews(uid)  
+})
+
 </script>
 
 <style scoped>

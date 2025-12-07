@@ -4,6 +4,7 @@ import cors from 'cors';
 import bookRoutes from './routes/BookRoutes.js';
 import genreRoutes from './routes/GenreRoutes.js';
 import reservationsRoutes from './routes/ReservationRoutes.js';
+import reviewsRoutes from './routes/ReviewRoutes.js';
  
 
 const app = express();
@@ -21,6 +22,7 @@ app.get('/', (req, res) => {
 app.use('/books', bookRoutes);
 app.use('/genres', genreRoutes);
 app.use('/reservations', reservationsRoutes);
+app.use('/reviews', reviewsRoutes);
 
 swagger(app);
 

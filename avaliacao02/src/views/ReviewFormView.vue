@@ -41,52 +41,59 @@
         required
       />
 
-      <!-- Toggle: resenha pública? -->
-<div class="switch-container">
-  <div class="switch-text">
-    <div class="text-body-2 font-weight-medium">
-      Visibilidade da resenha
-    </div>
-    <div class="text-caption text-medium-emphasis">
-      {{
-        form.isPublic
-          ? 'Outros usuários poderão ver esta resenha.'
-          : 'Somente você verá esta resenha.'
-      }}
-    </div>
-  </div>
+      <div class="switch-container">
+        <div class="switch-text">
+          <div class="text-body-2 font-weight-medium">
+            Visibilidade da resenha
+          </div>
+          <div class="text-caption text-medium-emphasis">
+            {{
+              form.isPublic
+                ? 'Outros usuários poderão ver esta resenha.'
+                : 'Somente você verá esta resenha.'
+            }}
+          </div>
+        </div>
 
-  <v-switch
-    v-model="form.isPublic"
-    inset
-    class="custom-switch"
-    hide-details
-    density="comfortable"
-    :label="form.isPublic ? 'Pública' : 'Privada'"
-  >
-    <template #thumb>
-      <v-icon size="18" color="white">
-        {{ form.isPublic ? 'mdi-earth' : 'mdi-lock' }}
-      </v-icon>
-    </template>
+        <v-switch
+          v-model="form.isPublic"
+          inset
+          class="custom-switch"
+          hide-details
+          density="comfortable"
+          :label="form.isPublic ? 'Pública' : 'Privada'"
+        >
+          <template #thumb>
+            <v-icon size="18" color="white">
+              {{ form.isPublic ? 'mdi-earth' : 'mdi-lock' }}
+            </v-icon>
+          </template>
 
-    <template #track>
-      <div class="switch-border"></div>
-      <div :class="form.isPublic ? 'track-public' : 'track-private'"></div>
-    </template>
-  </v-switch>
-</div>
-
+          <template #track>
+            <div class="switch-border"></div>
+            <div :class="form.isPublic ? 'track-public' : 'track-private'"></div>
+          </template>
+        </v-switch>
+      </div>
 
       <v-btn block type="submit" color="primary" class="mt-4">
         {{ isEdit ? 'Salvar alterações' : 'Salvar resenha' }}
       </v-btn>
     </v-form>
+
+    <v-snackbar
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      timeout="3000"
+      location="bottom right"
+    >
+      {{ snackbar.message }}
+    </v-snackbar>
   </v-card>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBooksStore } from '../stores/books'
 import { useReviewsStore } from '../stores/reviews'
@@ -115,24 +122,44 @@ const rules = {
   required: (v) => !!v || 'Campo obrigatório',
 }
 
+const snackbar = reactive({
+  show: false,
+  message: '',
+  color: 'success',
+})
+
+const showToast = (type, message) => {
+  snackbar.color = type === 'error' ? 'error' : 'success'
+  snackbar.message = message
+  snackbar.show = true
+}
+
 const bookOptions = computed(() =>
-  booksStore.books.map((b) => ({
+  (booksStore.books || []).map((b) => ({
     id: b.id,
     title: b.title,
   }))
 )
 
-onMounted(() => {
-  if (isEdit.value) {
-    const id = Number(route.params.id)
-    const review = reviewsStore.reviews.find((r) => r.id === id)
-    if (review) {
-      form.value.bookId = review.bookId
-      form.value.rating = review.rating
-      form.value.text = review.comment
-      form.value.isPublic = review.isPublic ?? true
-    }
+onMounted(async () => {
+  await booksStore.fetchBooks()
+
+  if (!isEdit.value) return
+
+  const id = Number(route.params.id)
+
+  const review = await reviewsStore.fetchReviewById(id)
+
+  if (!review) {
+    console.warn('Resenha não encontrada')
+    showToast('error', 'Resenha não encontrada.')
+    return
   }
+
+  form.value.bookId = review.book_id
+  form.value.rating = review.rating
+  form.value.text = review.body || ''
+  form.value.isPublic = review.is_public ?? true
 })
 
 const save = async () => {
@@ -148,35 +175,60 @@ const save = async () => {
 
   const book = booksStore.books.find((b) => b.id === form.value.bookId)
   if (!book) {
-    alert('Selecione um livro válido.')
+    showToast('error', 'Selecione um livro válido.')
     return
   }
+
+  const userId = authStore.user?.uid || authStore.user?.id || null
+  const userName =
+    authStore.user?.displayName ||
+    authStore.user?.name ||
+    authStore.user?.email ||
+    'Usuário'
 
   const basePayload = {
     bookId: book.id,
     bookTitle: book.title,
-    bookAuthor: book.author || '',
     rating: form.value.rating,
     comment: form.value.text,
     isPublic: form.value.isPublic,
-    userId: authStore.user?.uid || null,
-    userName: authStore.userName || 'Usuário',
+    userId,
+    userName,
   }
 
+  let resultAction
+
   if (isEdit.value) {
-    await reviewsStore.updateReview(Number(route.params.id), {
-      ...basePayload,
-    })
+    resultAction = await reviewsStore.updateReview(
+      Number(route.params.id),
+      basePayload
+    )
+
+    if (resultAction?.ok) {
+      showToast('success', 'Resenha atualizada com sucesso!')
+      router.push('/my-reviews')
+      await booksStore.fetchBooks()
+    } else {
+      showToast('error', 'Erro ao atualizar resenha.')
+    }
   } else {
-    await reviewsStore.addReview({
+    resultAction = await reviewsStore.addReview({
       ...basePayload,
       createdAt: new Date().toISOString(),
     })
-  }
 
-  router.push('/my-reviews')
+    if (resultAction?.ok) {
+      showToast('success', 'Resenha criada com sucesso!')
+      router.push('/my-reviews')
+      await booksStore.fetchBooks()
+    } else {
+      showToast('error', 'Erro ao criar resenha.')
+    }
+  }
 }
 </script>
+
+
 
 <style scoped>
 .rounded-xxl {
@@ -199,37 +251,31 @@ const save = async () => {
   cursor: pointer;
 }
 
-/* hover do container (fica bem cara de “clicável”) */
 .switch-container:hover {
   border-color: rgba(var(--v-theme-primary), 0.6);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
-/* texto do lado esquerdo */
 .switch-text {
   flex: 1;
   min-width: 0;
 }
 
-/* garante que clicar em qualquer lugar acione o switch */
 .switch-container :deep(.v-selection-control) {
   cursor: pointer;
 }
 
-/* área do switch em si */
 .custom-switch {
   margin: 0;
 }
 
-/* remove track padrão e deixa transparente para usarmos o nosso */
 :deep(.custom-switch .v-switch__track) {
   background-color: transparent !important;
   border: none !important;
-  height: 26px;       /* um pouco maior */
+  height: 26px;
   min-width: 48px;
 }
 
-/* thumb (bolinha) maiorzinha e com sombra */
 :deep(.custom-switch .v-switch__thumb) {
   width: 22px;
   height: 22px;
@@ -243,7 +289,6 @@ const save = async () => {
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
 }
 
-/* borda em volta do track (fica bem visível que é um controle) */
 .switch-border {
   position: absolute;
   inset: 0;
@@ -252,7 +297,6 @@ const save = async () => {
   pointer-events: none;
 }
 
-/* trilho quando está público – usa primary + accent do tema */
 .track-public {
   background: linear-gradient(
     90deg,
@@ -264,7 +308,6 @@ const save = async () => {
   border-radius: 999px;
 }
 
-/* trilho quando está privado – mais neutro, porém visível */
 .track-private {
   background-color: rgba(var(--v-theme-on-surface), 0.16);
   width: 100%;
