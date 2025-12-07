@@ -13,7 +13,7 @@
   "dependencies": {
     "@fontsource/roboto": "5.2.7",
     "@mdi/font": "^7.4.47",
-    "@supabase/supabase-js": "^2.86.0",
+    "@supabase/supabase-js": "^2.86.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",

@@ -3,6 +3,7 @@ import swagger from "./docs/swagger.js";
 import cors from 'cors';
 import bookRoutes from './routes/BookRoutes.js';
 import genreRoutes from './routes/GenreRoutes.js';
+import reservationsRoutes from './routes/ReservationRoutes.js';
  
 
 const app = express();
@@ -19,6 +20,7 @@ app.get('/', (req, res) => {
 // Routes
 app.use('/books', bookRoutes);
 app.use('/genres', genreRoutes);
+app.use('/reservations', reservationsRoutes);
 
 swagger(app);
 

@@ -1,6 +1,5 @@
 <template>
   <v-row class="gy-6">
-    <!-- Card de nova reserva -->
     <v-col cols="12">
       <v-card class="reservation-card rounded-xxl" elevation="3">
         <v-card-title class="d-flex align-center mb-2">
@@ -28,14 +27,14 @@
               </v-col>
 
               <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="reservation.userName"
-                  label="Nome do usuário"
-                  prepend-inner-icon="mdi-account"
-                  variant="outlined"
-                  density="comfortable"
-                  required
-                />
+               <v-text-field
+                v-model="reservation.userName"
+                label="Nome do usuário"
+                prepend-inner-icon="mdi-account"
+                variant="outlined"
+                density="comfortable"
+                readonly  
+              />
               </v-col>
 
               <v-col cols="12" md="4">
@@ -63,7 +62,6 @@
       </v-card>
     </v-col>
 
-    <!-- Card de listagem de reservas -->
     <v-col cols="12">
       <v-card class="rounded-xxl" elevation="3">
         <v-card-title class="d-flex align-center justify-space-between">
@@ -110,15 +108,29 @@
         </v-data-table>
       </v-card>
     </v-col>
+    <v-snackbar
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      timeout="3000"
+      location="bottom right"
+    >
+      {{ snackbar.message }}
+    </v-snackbar>
   </v-row>
 </template>
 
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, onMounted, watchEffect } from 'vue'
 import { useBooksStore } from '../stores/books'
+import { useReservationsStore } from '../stores/reservations'
+import { useAuthStore } from '../stores/auth'
 
 const booksStore = useBooksStore()
+const reservationsStore = useReservationsStore()
+const authStore = useAuthStore()
+
+const isAuthenticated = computed(() => authStore.isAuthenticated)
 
 const reservation = reactive({
   bookId: null,
@@ -126,7 +138,33 @@ const reservation = reactive({
   days: 7,
 })
 
-const reservations = ref([])
+const loggedUserName = computed(() => {
+  if (!authStore.user) return ''
+  return (
+    authStore.user.displayName ||
+    authStore.user.name ||
+    authStore.user.email ||
+    ''
+  )
+})
+
+watchEffect(() => {
+  if (isAuthenticated.value) {
+    reservation.userName = loggedUserName.value
+  }
+})
+
+const snackbar = reactive({
+  show: false,
+  message: '',
+  color: 'success',
+})
+
+const showToast = (type, message) => {
+  snackbar.color = type === 'error' ? 'error' : 'success'
+  snackbar.message = message
+  snackbar.show = true
+}
 
 const headers = [
   { title: 'Usuário', value: 'userName' },
@@ -139,60 +177,79 @@ const headers = [
 
 const availableBooks = computed(() => booksStore.availableBooks)
 
-const createReservation = () => {
-  const book = booksStore.books.find(
-    (b) => b.id === reservation.bookId
-  )
-  if (!book) return
+const reservations = computed(() => {
+  const books = booksStore.books
+  const base = reservationsStore.decoratedReservations
 
-  const id = reservations.value.length
-    ? Math.max(...reservations.value.map((r) => r.id)) + 1
-    : 1
-
-  const today = new Date()
-  const dueDate = new Date()
-  dueDate.setDate(today.getDate() + Number(reservation.days))
-
-  reservations.value.push({
-    id,
-    userName: reservation.userName,
-    bookId: book.id,
-    bookTitle: book.title,
-    createdAt: today.toISOString(),
-    dueDate: dueDate.toISOString(),
-  })
-
-  booksStore.updateBook(book.id, { available: false })
-
-  reservation.bookId = null
-  reservation.userName = ''
-  reservation.days = 7
-
-  updateReservationStatus()
-}
-
-const updateReservationStatus = () => {
-  const now = new Date()
-  reservations.value = reservations.value.map((res) => {
-    const due = new Date(res.dueDate)
-    const diffMs = due - now
-    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+  return base.map((r) => {
+    const book = books.find((b) => b.id === r.book_id)
     return {
-      ...res,
-      daysLeft: diffDays,
-      isLate: diffDays < 0,
+      ...r,
+      userName: r.notes || '',
+      bookTitle: book ? book.title : '',
+      dueDate: r.dueDate,
+      status: r.status,
     }
   })
+})
+
+const createReservation = async () => {
+  const book = booksStore.books.find((b) => b.id === reservation.bookId)
+  if (!book) {
+    showToast('error', 'Selecione um livro válido.')
+    return
+  }
+
+  if (!isAuthenticated.value || !authStore.user) {
+    showToast('error', 'Você precisa estar autenticado para reservar.')
+    return
+  }
+
+  const userId = authStore.user.uid || authStore.user.id
+
+  const created = await reservationsStore.createReservation({
+    bookId: reservation.bookId,
+    userId,
+    userName: reservation.userName,
+    days: reservation.days,
+  })
+
+  if (created) {
+    await booksStore.updateBook(book.id, { available: false })
+    reservation.bookId = null
+    reservation.days = 7
+    showToast('success', 'Livro reservado com sucesso! ')
+  } else {
+    showToast('error', 'Não foi possível reservar o livro. ')
+  }
 }
 
-const returnBook = (id) => {
-  const res = reservations.value.find((r) => r.id === id)
-  if (!res) return
+const returnBook = async (id) => {
+  if (!isAuthenticated.value || !authStore.user) {
+    showToast('error', 'Você precisa estar autenticado para devolver.')
+    return
+  }
 
-  booksStore.updateBook(res.bookId, { available: true })
-  reservations.value = reservations.value.filter((r) => r.id !== id)
+  const userId = authStore.user.uid || authStore.user.id
+
+  const ok = await reservationsStore.returnReservation(id, userId)
+
+  if (ok) {
+    const res = reservationsStore.reservations.find((r) => r.id === id)
+    if (res) {
+      await booksStore.updateBook(res.book_id, { available: true })
+    }
+    showToast('success', 'Livro devolvido com sucesso!')
+  } else {
+    showToast('error', 'Não foi possível devolver o livro.')
+  }
 }
 
-updateReservationStatus()
-setInterval(updateReservationStatus, 60_000)
+onMounted(async () => {
+  await booksStore.fetchBooks()
+  if (authStore.user) {
+    const userId = authStore.user.uid || authStore.user.id
+    await reservationsStore.fetchReservations(userId)
+  }
+})
 </script>
