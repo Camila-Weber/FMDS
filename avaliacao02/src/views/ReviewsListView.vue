@@ -119,7 +119,7 @@
 
           <v-list-item-subtitle class="mt-1">
             <div class="d-flex flex-wrap align-center">
-              <v-chip
+              <!-- <v-chip
                 size="x-small"
                 class="mr-2 mb-1"
                 color="primary"
@@ -127,7 +127,7 @@
               >
                 <v-icon start size="14">mdi-account</v-icon>
                 {{ review.userName || 'Usuário não informado' }}
-              </v-chip>
+              </v-chip> -->
 
               <span class="text-caption text-medium-emphasis mb-1">
                 Criada em

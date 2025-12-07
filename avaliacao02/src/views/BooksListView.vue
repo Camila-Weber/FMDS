@@ -78,18 +78,18 @@
       </template>
 
       <!-- avaliação -->
-      <template #item.rating="{ item }">
+      <template #item.avg_rating="{ item }">
         <div class="d-flex align-center">
           <v-rating
-            :model-value="item.rating || 0"
+            :model-value="item.avg_rating || 0"
             density="compact"
             size="small"
             readonly
             color="amber"
             half-increments
           />
-          <span v-if="item.rating" class="text-caption ml-1">
-            {{ item.rating.toFixed(1) }}
+          <span v-if="item.avg_rating" class="text-caption ml-1">
+            {{ item.avg_rating.toFixed(1) }}
           </span>
         </div>
       </template>
@@ -229,7 +229,7 @@ const headers = [
   { title: 'Autor', key: 'author' },
   { title: 'Gênero(s)', key: 'genres', sortable: false },
   { title: 'Status', key: 'available' },
-  { title: 'Avaliação', key: 'rating', sortable: false },
+  { title: 'Avaliação', key: 'avg_rating', sortable: false },
   { title: 'Ações', key: 'actions', sortable: false },
 ]
 
