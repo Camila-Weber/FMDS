@@ -65,7 +65,7 @@
             color="primary"
             variant="tonal"
           >
-            {{ g }}
+            {{ g.name }}
           </v-chip>
 
           <span
@@ -178,6 +178,8 @@
         <v-autocomplete
           v-model="filters.genre"
           :items="genresOptions"
+          item-title="name"
+          item-value="id"
           label="Gênero"
           prepend-inner-icon="mdi-bookmark-multiple-outline"
           clearable
@@ -235,7 +237,7 @@ const headers = [
 const genresOptions = computed(() => {
   const set = new Set()
   booksStore.books.forEach((b) => {
-    ;(b.genres || []).forEach((g) => set.add(g))
+    (b.genres || []).forEach((g) => set.add(g.id))
   })
   return Array.from(set)
 })

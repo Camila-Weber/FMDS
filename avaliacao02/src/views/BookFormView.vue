@@ -35,14 +35,14 @@
             <v-autocomplete
               v-model="form.genres"
               :items="genresOptions"
+              item-title="name"
+              item-value="id"
               label="Gêneros *"
               prepend-inner-icon="mdi-bookmark-multiple-outline"
               multiple
               chips
               closable-chips
               hide-selected
-              item-title="name"
-              item-value="id"
               :rules="[rules.requiredArray]"
               required
             />
@@ -82,8 +82,6 @@ const form = reactive({
   title: '',
   author: '',
   genres: [],
-  rating: 0,
-  available: true,
 })
 
 const rules = {
@@ -94,11 +92,14 @@ const rules = {
 const genresOptions = ref([])
 
 const loadGenres = async () => {
-  // Busca os gêneros da API
-  const response = await fetch('http://localhost:3001/genres')
-  const data = await response.json()
-
-  genresOptions.value = data.data;
+  try {
+    const data = await booksStore.fetchGenres()
+    genresOptions.value = data.data
+    
+  } catch (error) {
+    console.error('Erro ao carregar gêneros:', error)
+    genresOptions.value = []
+  }
 }
 
 onMounted(() => {
@@ -111,9 +112,7 @@ onMounted(() => {
     if (book) {
       form.title = book.title
       form.author = book.author
-      form.genres = book.genres ? [...book.genres] : []
-      form.rating = book.rating || 0
-      form.available = book.available
+      form.genres = book.genres
     }
   }
 })
@@ -124,12 +123,16 @@ const handleSubmit = async () => {
   const { valid } = await formRef.value.validate()
   if (!valid) return
 
+  // transforma form.genres (ids) em [{id,name}]
+  const genresPayload = (form.genres || []).map(g => {
+    const found = genresOptions.value.find(x => x.id === g)
+    return { id: found.id, name: found.name }
+  })
+
   const payload = {
     title: form.title,
     author: form.author,
-    available: form.available,
-    rating: form.rating || 0,
-    genres: [...form.genres],
+    genres: genresPayload,
   }
 
   try {

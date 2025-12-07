@@ -8,6 +8,7 @@ router.post("/", createBook); // Criar um novo livro
 router.get("/", getBooks); // Listar todos os livros
 router.get("/:id", getBookById); // Obter livro por ID
 router.put("/:id", updateBook); // Atualizar livro por ID
+router.patch("/:id", updateBook); // Atualizar livro por ID
 router.delete("/:id", deleteBook); // Deletar livro por ID
 
 export default router;
