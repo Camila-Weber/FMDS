@@ -1,7 +1,5 @@
 import { defineStore } from 'pinia'
 
-// Cadastrar uma variável em .env para a URL da API
-// VITE_API_BASE_URL=https://localhost:3001
 if (!import.meta.env.VITE_API_BASE_URL) {
   throw new Error('VITE_API_BASE_URL não está definida nas variáveis de ambiente')
 }
@@ -27,29 +25,23 @@ export const useBooksStore = defineStore('books', {
     async fetchGenres() {
       this.loading = true
       try {
-        const res = await fetch(GENRES_URL,
-          { method: 'GET' }
-        )
+        const res = await fetch(GENRES_URL, { method: 'GET' })
         const data = await res.json()
         return data
       } catch (e) {
         console.error('Erro ao buscar gêneros', e)
-
+        throw e
       } finally {
         this.loading = false
       }
     },
 
-
     async fetchBooks() {
       this.loading = true
       try {
-        const res = await fetch(BOOKS_URL,
-          { method: 'GET' }
-        )
+        const res = await fetch(BOOKS_URL, { method: 'GET' })
         const data = await res.json()
         this.books = data.data
-
       } catch (e) {
         console.error('Erro ao buscar livros', e)
       } finally {
@@ -57,14 +49,14 @@ export const useBooksStore = defineStore('books', {
       }
     },
 
-
     async createBook(payload) {
-      // payload.genres = [{id,name}, ...] (do BookForm)
-      const genreIds = (payload.genres || []).map(g => (g && typeof g === 'object' ? g.id : g))
+      const genreIds = (payload.genres || []).map(g =>
+        g && typeof g === 'object' ? g.id : g
+      )
 
       const bodyToApi = {
         ...payload,
-        genres: genreIds // API recebe apenas ids
+        genres: genreIds, // API recebe apenas ids
       }
 
       try {
@@ -74,26 +66,30 @@ export const useBooksStore = defineStore('books', {
           body: JSON.stringify(bodyToApi),
         })
         const data = await res.json()
-        
+
         if (data.success) {
-          this.books.push(data.data) // adiciona o livro retornado pela API
+          this.books.push(data.data)
+          return { ok: true, book: data.data }
         } else {
           console.error('Erro ao criar livro', data.error)
+          return { ok: false, error: data.error || 'Erro ao criar livro' }
         }
       } catch (e) {
         console.error('Erro ao criar livro', e)
+        return { ok: false, error: e.message || 'Erro ao criar livro' }
       }
     },
 
-
     async updateBook(id, payload) {
-      // payload.genres = [{id,name}, ...] (do BookForm)
-      const genreIds = (payload.genres || []).map(g => (g && typeof g === 'object' ? g.id : g))
+      const genreIds = (payload.genres || []).map(g =>
+        g && typeof g === 'object' ? g.id : g
+      )
 
       const bodyToApi = {
         ...payload,
-        genres: genreIds // API recebe apenas ids
+        genres: genreIds,
       }
+
       try {
         const res = await fetch(`${BOOKS_URL}/${id}`, {
           method: 'PATCH',
@@ -106,11 +102,14 @@ export const useBooksStore = defineStore('books', {
         if (data.success) {
           const index = this.books.findIndex((b) => b.id === id)
           if (index !== -1) this.books[index] = data.data
+          return { ok: true, book: data.data }
         } else {
           console.error('Erro ao atualizar livro', data.error)
+          return { ok: false, error: data.error || 'Erro ao atualizar livro' }
         }
       } catch (e) {
         console.error('Erro ao atualizar livro', e)
+        return { ok: false, error: e.message || 'Erro ao atualizar livro' }
       }
     },
 
@@ -120,11 +119,14 @@ export const useBooksStore = defineStore('books', {
         const data = await res.json()
         if (data.success) {
           this.books = this.books.filter((b) => b.id !== id)
+          return { ok: true }
         } else {
           console.error('Erro ao deletar livro', data.error)
+          return { ok: false, error: data.error || 'Erro ao deletar livro' }
         }
       } catch (e) {
         console.error('Erro ao deletar livro', e)
+        return { ok: false, error: e.message || 'Erro ao deletar livro' }
       }
     },
   },

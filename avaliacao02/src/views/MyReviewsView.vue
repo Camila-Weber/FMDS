@@ -170,10 +170,12 @@ import { ref, computed, onMounted } from 'vue'
 import { useReviewsStore } from '../stores/reviews'
 import { useAuthStore } from '../stores/auth'
 import { useBooksStore } from '../stores/books'
+import { useUiStore } from '../stores/ui'  
 
 const reviewsStore = useReviewsStore()
 const authStore = useAuthStore()
 const booksStore = useBooksStore()
+const ui = useUiStore()                     
 
 const booksMap = computed(() => {
   const map = new Map()
@@ -257,8 +259,16 @@ const cancelDelete = () => {
 
 const confirmDelete = async () => {
   if (!reviewToDelete.value) return
-  await reviewsStore.deleteReview(reviewToDelete.value.id)
-  await booksStore.fetchBooks()
+
+  const result = await reviewsStore.deleteReview(reviewToDelete.value.id)
+
+  if (result?.ok) {
+    await booksStore.fetchBooks()
+    ui.showSnackbar('success', 'Resenha excluída com sucesso.')   
+  } else {
+    ui.showSnackbar('error', 'Erro ao excluir resenha.')         
+  }
+
   cancelDelete()
 }
 
@@ -268,7 +278,6 @@ onMounted(async () => {
   await booksStore.fetchBooks()
   await reviewsStore.fetchMyReviews(uid)  
 })
-
 </script>
 
 <style scoped>

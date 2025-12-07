@@ -1,7 +1,6 @@
 <template>
   <div>
     <v-row class="gy-6">
-      <!-- BUSCA GLOBAL -->
       <v-col cols="12">
         <v-text-field
           v-model="search"
@@ -51,7 +50,6 @@
           </v-row>
         </v-card>
 
-        <!-- LISTAGEM DE LIVROS -->
         <v-card elevation="2" class="rounded-xxl pa-4 mt-6">
           <v-card-title class="d-flex align-center mb-3">
             <v-icon class="mr-2">mdi-book-open-page-variant</v-icon>
@@ -76,7 +74,6 @@
 
               <template #append>
                 <div class="d-flex align-center flex-wrap justify-end">
-                  <!-- status -->
                   <v-chip
                     size="x-small"
                     :color="book.available ? 'success' : 'warning'"
@@ -86,15 +83,13 @@
                     {{ book.available ? 'Disponível' : 'Reservado' }}
                   </v-chip>
 
-                  <!-- rating (se existir) -->
-                  <div v-if="book.rating" class="d-flex align-center mr-2 mb-1">
+                  <div v-if="book.avg_rating" class="d-flex align-center mr-2 mb-1">
                     <v-icon size="18" color="amber">mdi-star</v-icon>
                     <span class="text-caption ml-1">
-                      {{ book.rating.toFixed(1) }}
+                      {{ book.avg_rating.toFixed(1) }}
                     </span>
                   </div>
 
-                  <!-- atalho para resenha desse livro (se quiser algo mais específico depois) -->
                   <v-btn
                     icon
                     size="small"
@@ -116,7 +111,6 @@
         </v-card>
       </v-col>
 
-      <!-- ATALHOS -->
       <v-col cols="12" md="4">
         <v-card class="rounded-xxl pa-4" elevation="2">
           <v-card-title class="d-flex align-center mb-3">
@@ -145,7 +139,6 @@
             Reservas
           </v-btn>
 
-          <!-- NOVO ATALHO: RESENHAS -->
           <v-btn
             block
             variant="outlined"
@@ -159,7 +152,6 @@
       </v-col>
     </v-row>
 
-    <!-- BUSCA AVANÇADA (mantida) -->
     <v-dialog v-model="dialog" max-width="500">
       <v-card class="pa-4">
         <v-card-title class="text-h6 font-weight-medium">
@@ -204,7 +196,9 @@
 import { ref, computed } from 'vue'
 import { useBooksStore } from '../stores/books'
 import { useAuthStore } from '../stores/auth'
+import { useUiStore } from '../stores/ui'
 
+const ui = useUiStore()
 const booksStore = useBooksStore()
 const authStore = useAuthStore()
 
@@ -231,7 +225,6 @@ const reservedCount = computed(
   () => booksStore.books.filter((b) => !b.available).length
 )
 
-// LISTAGEM QUE ALIMENTA O CARD "LIVROS CADASTRADOS"
 const filteredBooks = computed(() => {
   const s = search.value.toLowerCase()
   const { title, author, status } = filters.value
@@ -239,7 +232,6 @@ const filteredBooks = computed(() => {
   return booksStore.books.filter((b) => {
     let ok = true
 
-    // busca simples (campo de cima)
     if (s) {
       ok =
         ok &&
@@ -247,7 +239,6 @@ const filteredBooks = computed(() => {
           b.author.toLowerCase().includes(s))
     }
 
-    // filtros avançados (opcionais)
     if (title) {
       ok = ok && b.title.toLowerCase().includes(title.toLowerCase())
     }
@@ -270,8 +261,8 @@ onMounted(async () => {
   try {
     await booksStore.fetchBooks()
   } catch (e) {
-    // exibir notificação amigável (substitua por toast)
     console.error('Erro ao carregar livros:', e)
+    ui.showSnackbar('error', 'Erro ao carregar lista de livros.')
   }
 })
 </script>
@@ -281,7 +272,6 @@ onMounted(async () => {
   border-radius: 20px;
 }
 
-/* cards de estatística */
 .stat-card {
   background-color: rgb(var(--v-theme-surface));
   border: 1px solid rgba(var(--v-theme-primary), 0.25);
@@ -294,7 +284,6 @@ onMounted(async () => {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
 
-/* linha da lista de livros */
 .book-list-item {
   border-radius: 12px;
   margin-bottom: 4px;

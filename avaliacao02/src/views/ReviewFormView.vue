@@ -80,24 +80,16 @@
         {{ isEdit ? 'Salvar alterações' : 'Salvar resenha' }}
       </v-btn>
     </v-form>
-
-    <v-snackbar
-      v-model="snackbar.show"
-      :color="snackbar.color"
-      timeout="3000"
-      location="bottom right"
-    >
-      {{ snackbar.message }}
-    </v-snackbar>
   </v-card>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, reactive } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBooksStore } from '../stores/books'
 import { useReviewsStore } from '../stores/reviews'
 import { useAuthStore } from '../stores/auth'
+import { useUiStore } from '../stores/ui' 
 
 const route = useRoute()
 const router = useRouter()
@@ -105,6 +97,7 @@ const router = useRouter()
 const booksStore = useBooksStore()
 const reviewsStore = useReviewsStore()
 const authStore = useAuthStore()
+const ui = useUiStore()                     
 
 const isEdit = computed(() => !!route.params.id)
 
@@ -120,18 +113,6 @@ const form = ref({
 
 const rules = {
   required: (v) => !!v || 'Campo obrigatório',
-}
-
-const snackbar = reactive({
-  show: false,
-  message: '',
-  color: 'success',
-})
-
-const showToast = (type, message) => {
-  snackbar.color = type === 'error' ? 'error' : 'success'
-  snackbar.message = message
-  snackbar.show = true
 }
 
 const bookOptions = computed(() =>
@@ -152,7 +133,7 @@ onMounted(async () => {
 
   if (!review) {
     console.warn('Resenha não encontrada')
-    showToast('error', 'Resenha não encontrada.')
+    ui.showSnackbar('error', 'Resenha não encontrada.') 
     return
   }
 
@@ -175,7 +156,7 @@ const save = async () => {
 
   const book = booksStore.books.find((b) => b.id === form.value.bookId)
   if (!book) {
-    showToast('error', 'Selecione um livro válido.')
+    ui.showSnackbar('error', 'Selecione um livro válido.')  
     return
   }
 
@@ -205,11 +186,11 @@ const save = async () => {
     )
 
     if (resultAction?.ok) {
-      showToast('success', 'Resenha atualizada com sucesso!')
+      ui.showSnackbar('success', 'Resenha atualizada com sucesso!')  
       router.push('/my-reviews')
       await booksStore.fetchBooks()
     } else {
-      showToast('error', 'Erro ao atualizar resenha.')
+      ui.showSnackbar('error', 'Erro ao atualizar resenha.')        
     }
   } else {
     resultAction = await reviewsStore.addReview({
@@ -218,17 +199,15 @@ const save = async () => {
     })
 
     if (resultAction?.ok) {
-      showToast('success', 'Resenha criada com sucesso!')
+      ui.showSnackbar('success', 'Resenha criada com sucesso!')      
       router.push('/my-reviews')
       await booksStore.fetchBooks()
     } else {
-      showToast('error', 'Erro ao criar resenha.')
+      ui.showSnackbar('error', 'Erro ao criar resenha.')            
     }
   }
 }
 </script>
-
-
 
 <style scoped>
 .rounded-xxl {

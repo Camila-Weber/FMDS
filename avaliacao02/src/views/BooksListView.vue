@@ -7,7 +7,6 @@
 
       <v-spacer />
 
-      <!-- busca simples -->
       <v-text-field
         v-model="search"
         placeholder="Buscar por título ou autor..."
@@ -19,7 +18,6 @@
         style="max-width: 280px"
       />
 
-      <!-- botão de busca avançada -->
       <v-btn
         icon
         variant="text"
@@ -43,7 +41,6 @@
       class="elevation-0 books-table"
       :item-class="itemClass"
     >
-      <!-- status -->
       <template #item.available="{ item }">
         <v-chip
           size="small"
@@ -54,7 +51,6 @@
         </v-chip>
       </template>
 
-      <!-- gêneros -->
       <template #item.genres="{ item }">
         <div class="d-flex flex-wrap">
           <v-chip
@@ -77,7 +73,6 @@
         </div>
       </template>
 
-      <!-- avaliação -->
       <template #item.avg_rating="{ item }">
         <div class="d-flex align-center">
           <v-rating
@@ -94,7 +89,6 @@
         </div>
       </template>
 
-      <!-- ações -->
       <template #item.actions="{ item }">
         <v-btn
           icon
@@ -117,7 +111,6 @@
       </template>
     </v-data-table>
 
-    <!-- DIÁLOGO DE CONFIRMAÇÃO DE EXCLUSÃO -->
     <v-dialog v-model="confirmDialog" max-width="420">
       <v-card class="pa-4">
         <v-card-title class="text-h6">
@@ -205,8 +198,10 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useBooksStore } from '../stores/books'
+import { useUiStore } from '../stores/ui'   // 👈
 
 const booksStore = useBooksStore()
+const ui = useUiStore()
 
 const search = ref('')
 const itemsPerPage = ref(10)
@@ -214,7 +209,6 @@ const itemsPerPage = ref(10)
 const confirmDialog = ref(false)
 const bookToDelete = ref(null)
 
-// diálogo e filtros da busca avançada
 const dialog = ref(false)
 const filters = ref({
   title: '',
@@ -233,7 +227,6 @@ const headers = [
   { title: 'Ações', key: 'actions', sortable: false },
 ]
 
-// gêneros disponíveis (derivados dos livros cadastrados)
 const genresOptions = computed(() => {
   const set = new Set()
   booksStore.books.forEach((b) => {
@@ -242,7 +235,6 @@ const genresOptions = computed(() => {
   return Array.from(set)
 })
 
-// aplica busca simples + filtros avançados
 const filteredBooks = computed(() => {
   const s = search.value.toLowerCase()
   const { title, author, status, genre } = filters.value
@@ -250,7 +242,6 @@ const filteredBooks = computed(() => {
   return booksStore.books.filter((b) => {
     let ok = true
 
-    // busca simples
     if (s) {
       ok =
         ok &&
@@ -258,7 +249,6 @@ const filteredBooks = computed(() => {
           b.author.toLowerCase().includes(s))
     }
 
-    // filtros avançados
     if (title) {
       ok = ok && b.title.toLowerCase().includes(title.toLowerCase())
     }
@@ -303,7 +293,14 @@ const openDeleteDialog = (item) => {
 const confirmDelete = async () => {
   if (!bookToDelete.value) return
 
-  await booksStore.deleteBook(bookToDelete.value.id)
+  const result = await booksStore.deleteBook(bookToDelete.value.id)
+
+  if (result?.ok) {
+    ui.showSnackbar('success', 'Livro deletado com sucesso!')
+  } else {
+    ui.showSnackbar('error', result?.error || 'Erro ao deletar livro.')
+  }
+
   confirmDialog.value = false
   bookToDelete.value = null
 }
@@ -348,11 +345,10 @@ const itemClass = (item) => {
 }
 
 .v-theme--libraryDark .toolbar-section {
-  background-color: rgba(var(--v-theme-secondary), 1); /* diferente do surface */
+  background-color: rgba(var(--v-theme-secondary), 1); 
   border-bottom-color: rgba(var(--v-theme-primary), 0.45);
 }
 
-/* chips de gênero */
 .genre-chip {
   font-weight: 500;
   background-color: rgba(var(--v-theme-primary), 0.16);

@@ -47,7 +47,6 @@
           />
         </v-col>
 
-        <!-- USUÁRIO -->
         <v-col cols="12" md="4">
           <v-text-field
             v-model="filters.user"
@@ -59,7 +58,6 @@
           />
         </v-col>
 
-        <!-- AVALIAÇÃO -->
         <v-col cols="12" md="4">
           <v-select
             v-model="filters.rating"
@@ -74,7 +72,6 @@
         </v-col>
       </v-row>
 
-      <!-- LISTA DE RESENHAS FILTRADAS -->
       <div
         v-if="!filteredReviews.length"
         class="text-medium-emphasis text-center py-6"
@@ -119,16 +116,6 @@
 
           <v-list-item-subtitle class="mt-1">
             <div class="d-flex flex-wrap align-center">
-              <!-- <v-chip
-                size="x-small"
-                class="mr-2 mb-1"
-                color="primary"
-                variant="tonal"
-              >
-                <v-icon start size="14">mdi-account</v-icon>
-                {{ review.userName || 'Usuário não informado' }}
-              </v-chip> -->
-
               <span class="text-caption text-medium-emphasis mb-1">
                 Criada em
                 {{
@@ -153,9 +140,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useReviewsStore } from '../stores/reviews'
 import { useBooksStore } from '../stores/books'
+import { useUiStore } from '../stores/ui'   
 
 const reviewsStore = useReviewsStore()
 const booksStore = useBooksStore()
+const ui = useUiStore()                     
 
 const bookOptions = computed(() =>
   (booksStore.books || []).map((b) => ({
@@ -242,8 +231,13 @@ const filteredReviews = computed(() => {
 })
 
 onMounted(async () => {
-  await booksStore.fetchBooks()
-  await reviewsStore.fetchAllReviews()
+  try {
+    await booksStore.fetchBooks()
+    await reviewsStore.fetchAllReviews()
+  } catch (e) {
+    console.error(e)
+    ui.showSnackbar('error', 'Erro ao carregar resenhas.')   
+  }
 })
 </script>
 

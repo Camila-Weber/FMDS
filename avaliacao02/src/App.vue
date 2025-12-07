@@ -20,18 +20,32 @@
             </v-col>
           </v-row>
         </v-container>
+
+        <!-- SNACKBAR GLOBAL -->
+        <v-snackbar
+          v-model="ui.snackbar.show"
+          :color="ui.snackbar.color"
+          :timeout="ui.snackbar.timeout"
+          location="bottom right"
+        >
+          {{ ui.snackbar.message }}
+        </v-snackbar>
       </v-main>
     </v-layout>
   </v-app>
 </template>
 
+
 <script setup>
 import { computed, ref } from 'vue'
 import { useAuthStore } from './stores/auth'
+import { useUiStore } from './stores/ui' 
 import AppBar from './components/AppBar.vue'
 import SideNav from './components/SideNav.vue'
 
 const authStore = useAuthStore()
+const ui = useUiStore()                    
+
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 
 const collapsed = ref(false)

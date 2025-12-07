@@ -10,7 +10,6 @@
     <v-card-text>
       <v-form ref="formRef" @submit.prevent="handleSubmit">
         <v-row class="mt-2" dense>
-          
           <v-col cols="12" md="8">
             <v-text-field
               v-model="form.title"
@@ -47,7 +46,6 @@
               required
             />
           </v-col>
-
         </v-row>
 
         <div class="mt-4 d-flex justify-end">
@@ -62,6 +60,15 @@
         </div>
       </v-form>
     </v-card-text>
+
+    <v-snackbar
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      timeout="3000"
+      location="bottom right"
+    >
+      {{ snackbar.message }}
+    </v-snackbar>
   </v-card>
 </template>
 
@@ -69,10 +76,12 @@
 import { reactive, computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBooksStore } from '../stores/books'
+import { useUiStore } from '../stores/ui'
 
 const route = useRoute()
 const router = useRouter()
 const booksStore = useBooksStore()
+const ui = useUiStore()  
 
 const formRef = ref(null)
 
@@ -91,14 +100,26 @@ const rules = {
 
 const genresOptions = ref([])
 
+const snackbar = reactive({
+  show: false,
+  message: '',
+  color: 'success',
+})
+
+const showToast = (type, message) => {
+  snackbar.color = type === 'error' ? 'error' : 'success'
+  snackbar.message = message
+  snackbar.show = true
+}
+
 const loadGenres = async () => {
   try {
     const data = await booksStore.fetchGenres()
     genresOptions.value = data.data
-    
   } catch (error) {
     console.error('Erro ao carregar gêneros:', error)
     genresOptions.value = []
+    showToast('error', 'Erro ao carregar gêneros.')
   }
 }
 
@@ -112,7 +133,7 @@ onMounted(() => {
     if (book) {
       form.title = book.title
       form.author = book.author
-      form.genres = book.genres
+      form.genres = (book.genres || []).map(g => g.id)
     }
   }
 })
@@ -123,10 +144,9 @@ const handleSubmit = async () => {
   const { valid } = await formRef.value.validate()
   if (!valid) return
 
-  // transforma form.genres (ids) em [{id,name}]
-  const genresPayload = (form.genres || []).map(g => {
-    const found = genresOptions.value.find(x => x.id === g)
-    return { id: found.id, name: found.name }
+  const genresPayload = (form.genres || []).map(id => {
+    const found = genresOptions.value.find(x => x.id === id)
+    return found ? { id: found.id, name: found.name } : { id, name: '' }
   })
 
   const payload = {
@@ -136,15 +156,30 @@ const handleSubmit = async () => {
   }
 
   try {
-    if (isEdit.value) {
-      await booksStore.updateBook(Number(route.params.id), payload)
-    } else {
-      await booksStore.createBook(payload)
-    }
+    let result
 
-    router.push({ name: 'books-list' })
+    if (isEdit.value) {
+      result = await booksStore.updateBook(Number(route.params.id), payload)
+
+      if (result?.ok) {
+        ui.showSnackbar('success', 'Livro atualizado com sucesso!')   
+        router.push({ name: 'books-list' })
+      } else {
+        ui.showSnackbar('error', result?.error || 'Erro ao atualizar livro.')
+      }
+    } else {
+      result = await booksStore.createBook(payload)
+
+      if (result?.ok) {
+        ui.showSnackbar('success', 'Livro cadastrado com sucesso!')   
+        router.push({ name: 'books-list' })
+      } else {
+        ui.showSnackbar('error', result?.error || 'Erro ao cadastrar livro.')
+      }
+    }
   } catch (error) {
     console.error('Erro ao salvar livro:', error)
+    ui.showSnackbar('error', 'Erro inesperado ao salvar livro.')
   }
 }
 </script>
