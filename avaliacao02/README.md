@@ -2,8 +2,8 @@
 
 ## 👥 Integrantes do Grupo
 - **CAMILA WEBER – Matrícula 20230006577 – camila.weber@unemat.br (front-end)**
-- **VITOR EMANUEL SILVA SAUZEN  – Matrícula 20230013295 – vitor.sauzen@unemat.br (api)**
-- **WILLEN SILVA DE SOUZA – Matrícula 20230020039 – willen.silva@unemat.br (banco)**
+- **VITOR EMANUEL SILVA SAUZEN  – Matrícula 20230013295 – vitor.sauzen@unemat.br (api e back-end)**
+- **WILLEN SILVA DE SOUZA – Matrícula 20230020039 – willen.silva@unemat.br (banco e back-end)**
 
 ---
 
@@ -14,7 +14,7 @@ O sistema é uma aplicação web para **gestão de biblioteca**, permitindo:
 - ✔ Cadastro, edição e remoção de livros  
 - ✔ Controle de disponibilidade e reservas  
 - ✔ Busca simples e avançada  
-- ✔ Login com Google (Firebase Auth)  
+- ✔ Login com Google (Supabase Auth — OAuth2)  
 - ✔ Dashboard dinâmico com visão geral da biblioteca  
 - ✔ Avaliação e resenhas (módulo configurado para expansão)  
 - ✔ Suporte aos temas claro e escuro  
@@ -30,7 +30,7 @@ A proposta visa simplificar o gerenciamento interno de acervo, oferecendo uma ex
 - **Vite**
 - **Vuetify 3**
 - **Pinia (gerenciamento de estado)**
-- **Firebase Authentication (Google Login)**
+- **Supabase Auth — OAuth2 (Google Login)**
 - **Supabase — armazena todos os dados da aplicação (usuários, livros, reservas e avaliações)**
 - **Material Design Icons (MDI)**
 
@@ -80,12 +80,10 @@ npm install @supabase/supabase-js
 2. Vá em **APIs & Services → OAuth consent screen** → escolha **External** → salve.
 3. Vá em **Credentials → Create Credentials → OAuth Client ID**.
 4. Tipo: **Web application**.
-5. Adicione em **Authorized JavaScript origins**:
-   * `http://localhost:[PORTA_USADA]`
-6. Adicione em **Authorized redirect URIs**:
+5. Adicione em **Authorized redirect URIs**:
 
    * `https://<SEU-PROJETO>.supabase.co/auth/v1/callback`
-7. Copie **Client ID** e **Client Secret**.
+6. Copie **Client ID** e **Client Secret**.
 
 ---
 
@@ -97,12 +95,11 @@ npm install @supabase/supabase-js
 
 ---
 
-### ➤ 4.4 Criar o arquivo `.env`
+### ➤ 4.4  Variáveis em `.env` para autenticação
 
 ```env
 VITE_SUPABASE_URL=https://<SEU-PROJETO>.supabase.co
 VITE_SUPABASE_ANON_KEY=<SUA-ANON-KEY>
-SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET="<CLIENT-SECRET>"
 ```
 
 ---
@@ -406,20 +403,20 @@ with check (false);
 ```
 
 Crie o arquivo .env na raiz do projeto:
+```bash
 # URL da API 
 VITE_API_BASE_URL=http://localhost:3001
 
-# Supabase configuration
+# Configuração Supabase (expostas ao front-end)
 VITE_SUPABASE_URL=xxxxxxxxxxxxxxxxxxxxx
 VITE_SUPABASE_ANON_KEY=xxxxxxxxxxxxxxxxxxxxx
 
+# Configuração Supabase (back-end)
 SUPABASE_URL=xxxxxxxxxxxxxxxxxxxxx
 SUPABASE_ANON_KEY=xxxxxxxxxxxxxxxxxxxxx
 SUPABASE_SERVICE_ROLE_KEY=xxxxxxxxxxxxxxxxxxxxx
 SUPABASE_PROJECT_ID=xxxxxxxxxxxxxxxxxxxxx
-
-
-##
+```
 
 ## ▶️ 6. Executar o projeto
 
@@ -437,35 +434,43 @@ npm run serve
 
 ## 🗂 Estrutura do Projeto
 
-src/
-├── assets/
-├── components/
-├── controllers/
-│ └── GenreController.js
-├── db/
-│ ├── db.js
-├── docs/
-│ ├── books.yaml
-│ ├── genre.yaml
-│ ├── reservation.yaml
-│ ├── review.yaml
-│ ├── swagger.js
-├── stores/
-│ ├── auth.js
-│ └── books.js
-├── router/
-│ └── index.js
-├── routes/
-│ └── BookRoutes.js
-│ └── GenreRoutes.js
-├── views/
-│ ├── DashboardView.vue
-│ ├── BooksListView.vue
-│ ├── BookFormView.vue
-│ ├── ReservationsView.vue
-│ ├── ReviewsView.vue ← nova página
-│ └── PublicHomeView.vue ← página pública (não autenticada)
-├── firebase.js
-├── App.vue
-├── index.js
-└── main.js
+```bash
+└──src/
+  ├── assets/
+  ├── components/
+  ├── controllers/
+  │ └── GenreController.js
+  ├── db/
+  │ ├── db.js
+  ├── docs/
+  │ ├── books.yaml
+  │ ├── genre.yaml
+  │ ├── reservation.yaml
+  │ ├── review.yaml
+  │ ├── swagger.js
+  ├── stores/
+  │ ├── auth.js
+  │ ├── books.js
+  │ ├── reservations.js
+  │ ├── reviews.js
+  │ └── ui.js
+  ├── router/
+  │ └── index.js
+  ├── routes/
+  │ └── BookRoutes.js
+  │ └── GenreRoutes.js
+  │ └── ReservationRoutes.js
+  │ └── ReviewRoutes.js
+  ├── views/
+  │ ├── DashboardView.vue
+  │ ├── BooksListView.vue
+  │ ├── BookFormView.vue
+  │ ├── ReservationsView.vue
+  │ ├── ReviewsView.vue ← nova página
+  │ └── PublicHomeView.vue ← página pública (não autenticada)
+  ├── App.vue
+  ├── firebase.js
+  ├── index.js
+  ├── main.js
+  └── supabase.js
+```
