@@ -96,7 +96,7 @@ export const useBooksStore = defineStore('books', {
       }
       try {
         const res = await fetch(`${BOOKS_URL}/${id}`, {
-          method: 'PATCH',
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(bodyToApi),
         })

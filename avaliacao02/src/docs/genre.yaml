@@ -1,0 +1,43 @@
+tags:
+  - name: Genres
+    description: API para gerenciar gêneros literários
+
+paths:
+  /genres:
+    get:
+      summary: Retorna todos os gêneros
+      tags: [Genres]
+      responses:
+        200:
+          description: Lista de gêneros obtida com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Genre'
+        500:
+          description: Erro ao obter gêneros
+
+
+components:
+  schemas:
+    Genre:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Ficção científica"
+        description:
+          type: string
+          nullable: true
+          example: "Gênero que aborda temas futuristas e tecnológicos"

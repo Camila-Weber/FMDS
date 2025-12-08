@@ -1,0 +1,224 @@
+tags:
+  - name: Reviews
+    description: API para gerenciar resenhas de livros
+
+paths:
+  /reviews:
+    post:
+      summary: Cria uma nova resenha
+      tags: [Reviews]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewCreate'
+      responses:
+        201:
+          description: Resenha criada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Review'
+        400:
+          description: Campos obrigatórios ausentes ou inválidos (book_id, rating e user_id)
+        500:
+          description: Erro ao criar resenha
+
+    get:
+      summary: Lista resenhas. Se user_id for fornecido retorna as resenhas do usuário; caso contrário retorna resenhas públicas.
+      tags: [Reviews]
+      parameters:
+        - name: user_id
+          in: query
+          description: UID do usuário (opcional). Se informado, retorna apenas resenhas desse usuário.
+          required: false
+          schema:
+            type: string
+      responses:
+        200:
+          description: Lista de resenhas obtida com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Review'
+        500:
+          description: Erro ao obter resenhas
+          
+  /reviews/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: ID da resenha
+    get:
+      summary: Retorna uma resenha por ID
+      tags: [Reviews]
+      responses:
+        200:
+          description: Resenha encontrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Review'
+        404:
+          description: Resenha não encontrada
+        500:
+          description: Erro ao obter resenha
+
+    put:
+      summary: Atualiza uma resenha por ID (substituição parcial/total de campos suportados)
+      tags: [Reviews]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewUpdate'
+      responses:
+        200:
+          description: Resenha atualizada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Review'
+        400:
+          description: Nenhum campo para atualizar ou corpo inválido
+        404:
+          description: Resenha não encontrada
+        500:
+          description: Erro ao atualizar resenha
+
+    delete:
+      summary: Deleta uma resenha por ID
+      tags: [Reviews]
+      responses:
+        200:
+          description: Resenha deletada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        404:
+          description: Resenha não encontrada
+        500:
+          description: Erro ao deletar resenha
+
+
+
+components:
+  schemas:
+    Review:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 123
+        book_id:
+          type: integer
+          example: 45
+        rating:
+          type: integer
+          description: "Nota da resenha (ex.: 1-5)"
+          example: 4
+        title:
+          type: string
+          example: "Ótima leitura"
+        body:
+          type: string
+          description: Texto da resenha (no controller é chamado de body)
+          example: "Gostei muito do enredo e da construção dos personagens."
+        is_public:
+          type: boolean
+          example: true
+        user_id:
+          type: string
+          description: UID do usuário que criou a resenha
+          example: "auth|abc123"
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    ReviewCreate:
+      type: object
+      required:
+        - book_id
+        - rating
+        - user_id
+      properties:
+        book_id:
+          type: integer
+          example: 45
+        rating:
+          type: integer
+          description: "Nota da resenha (ex.: 1-5)"
+          example: 5
+        comment:
+          type: string
+          nullable: true
+          description: Texto da resenha recebido no body do controller (mapeado para `body` na inserção)
+          example: "Excelente livro!"
+        is_public:
+          type: boolean
+          example: true
+        user_id:
+          type: string
+          example: "auth|abc123"
+        title:
+          type: string
+          example: "Recomendo"
+
+    ReviewUpdate:
+      type: object
+      properties:
+        rating:
+          type: integer
+          example: 4
+        comment:
+          type: string
+          nullable: true
+          description: Atualiza o texto da resenha (mapeado para `body`)
+          example: "Atualização do comentário"
+        is_public:
+          type: boolean
+          example: true
+        title:
+          type: string
+          example: "Título atualizado"

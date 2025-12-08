@@ -27,5 +27,8 @@ app.use('/reviews', reviewsRoutes);
 swagger(app);
 
 app.listen(PORT, () => {
+  console.log("\n-----------------------");
   console.log(`Servidor backend rodando em http://localhost:${PORT}`);
+  console.log("\n-----------------------");
+  console.log(`Documentação Swagger disponível em http://localhost:${PORT}/docs`);
 });

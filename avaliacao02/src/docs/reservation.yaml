@@ -1,0 +1,253 @@
+tags:
+  - name: Reservations
+    description: API para gerenciar reservas de livros
+
+paths:
+  /reservations:
+    post:
+      summary: Cria uma nova reserva
+      tags: [Reservations]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservationCreate'
+      responses:
+        201:
+          description: Reserva criada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Reservation'
+        400:
+          description: Dados inválidos
+        500:
+          description: Erro ao criar reserva
+
+    get:
+      summary: Lista reservas com status "reservado" para um usuário
+      tags: [Reservations]
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          description: UID do usuário (Firebase/Supabase)
+          schema:
+            type: string
+      responses:
+        200:
+          description: Lista de reservas obtida com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Reservation'
+        400:
+          description: user_id ausente
+        500:
+          description: Erro ao obter reservas
+
+  /reservations/{id}:
+    get:
+      summary: Retorna uma reserva por ID (do usuário informado)
+      tags: [Reservations]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: user_id
+          in: query
+          required: true
+          description: UID do usuário dono da reserva
+          schema:
+            type: string
+      responses:
+        200:
+          description: Reserva encontrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Reservation'
+        400:
+          description: user_id ausente
+        404:
+          description: Reserva não encontrada
+        500:
+          description: Erro ao obter reserva
+
+    put:
+      summary: Atualiza campos de uma reserva (apenas do próprio usuário)
+      tags: [Reservations]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservationUpdate'
+      responses:
+        200:
+          description: Reserva atualizada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Reservation'
+        400:
+          description: Corpo inválido
+        404:
+          description: Reserva não encontrada
+        500:
+          description: Erro ao atualizar reserva
+
+  /reservations/{id}/return:
+    put:
+      summary: Marca uma reserva como devolvida
+      tags: [Reservations]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservationReturn'
+      responses:
+        200:
+          description: Reserva marcada como devolvida
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Reservation'
+        400:
+          description: user_id ausente
+        404:
+          description: Reserva não encontrada
+        500:
+          description: Erro ao marcar reserva como devolvida
+
+
+components:
+  schemas:
+    Reservation:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: string
+          description: UID do usuário
+        book_id:
+          type: integer
+        status:
+          type: string
+          enum: [reservado, devolvido]
+        notes:
+          type: string
+          nullable: true
+        reserved_at:
+          type: string
+          format: date-time
+        borrowed_at:
+          type: string
+          format: date-time
+          nullable: true
+        due_date:
+          type: string
+          format: date-time
+        returned_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    ReservationCreate:
+      type: object
+      required:
+        - user_id
+        - book_id
+      properties:
+        user_id:
+          type: string
+        book_id:
+          type: integer
+        days:
+          type: integer
+          example: 7
+        notes:
+          type: string
+          nullable: true
+
+    ReservationUpdate:
+      type: object
+      required:
+        - user_id
+      properties:
+        user_id:
+          type: string
+        status:
+          type: string
+          enum: [reservado, devolvido]
+        notes:
+          type: string
+          nullable: true
+        due_date:
+          type: string
+          format: date-time
+
+    ReservationReturn:
+      type: object
+      required:
+        - user_id
+      properties:
+        user_id:
+          type: string
