@@ -45,7 +45,7 @@ git clone https://github.com/usuario/repositorio.git
 cd repositorio
 ```
 
-## 🎨 2. Instalar dependências do frontend
+## 🎨 2. Instalar dependências
 
 ```bash
 npm install
@@ -62,19 +62,69 @@ Instalar:
 npm install @mdi/font
 ```
 
-## 🔥 4. Configuração do Firebase
-
+## 🔥 4. Configuração do login com Google
 A aplicação utiliza **Login com Google**, portanto é obrigatório criar o arquivo `.env`.
 
 ---
 
-### ➤ 4.1 Instalar o Firebase
-
+### ➤ 4.1 Instalar o Supabase JavaScript Client
 ```bash
-npm install firebase
+npm install @supabase/supabase-js
 ```
 
+---
+
+### ➤ 4.2 Criar credenciais no Google Cloud (OAuth)
+
+1. Acesse **Google Cloud Console** → crie/abra um projeto.
+2. Vá em **APIs & Services → OAuth consent screen** → escolha **External** → salve.
+3. Vá em **Credentials → Create Credentials → OAuth Client ID**.
+4. Tipo: **Web application**.
+5. Adicione em **Authorized JavaScript origins**:
+   * `http://localhost:[PORTA_USADA]`
+6. Adicione em **Authorized redirect URIs**:
+
+   * `https://<SEU-PROJETO>.supabase.co/auth/v1/callback`
+7. Copie **Client ID** e **Client Secret**.
+
+---
+
+### ➤ 4.3 Ativar Google no Supabase
+
+1. Supabase Dashboard → **Authentication → Sign in / Providers → Google**
+2. Cole **Client ID** e **Client Secret**
+3. Ative o provider.
+
+---
+
+### ➤ 4.4 Criar o arquivo `.env`
+
+```env
+VITE_SUPABASE_URL=https://<SEU-PROJETO>.supabase.co
+VITE_SUPABASE_ANON_KEY=<SUA-ANON-KEY>
+SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET="<CLIENT-SECRET>"
+```
+
+---
+
+### ➤ 4.5 Código do login (frontend)
+
+```js
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+)
+
+await supabase.auth.signInWithOAuth({ provider: 'google' })
+```
+
+
 ## 🗄️ 5. Configuração do Supabase
+
+### 5.1 Criando o Banco de dados
+Execute o SQL para criar as tabelas:
 
 ```sql
 -- =================================================
@@ -86,43 +136,18 @@ CREATE SCHEMA IF NOT EXISTS public;
 SET search_path TO public;
 
 -- =========================
--- 1) users
--- =========================
-CREATE TABLE IF NOT EXISTS public.users (
-  id           BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  google_sub   VARCHAR(64) UNIQUE,
-  name         VARCHAR(150) NOT NULL,
-  email        VARCHAR(150) NOT NULL UNIQUE,
-  photo_url    VARCHAR(255),
-  role         VARCHAR(20) DEFAULT 'user',
-  created_at   TIMESTAMP DEFAULT NOW(),
-  updated_at   TIMESTAMP DEFAULT NOW()
-);
-
--- =========================
--- 2) books
+-- 1) books
 -- =========================
 CREATE TABLE IF NOT EXISTS public.books (
   id              BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   title           VARCHAR(255) NOT NULL,
   author          VARCHAR(255) NOT NULL,
-  synopsis        TEXT,
-  published_year  INT,
-  isbn            VARCHAR(20) UNIQUE,
-  pages           INT,
-  cover_url       VARCHAR(255),
-
-  available       BOOLEAN NOT NULL DEFAULT TRUE,
-
   avg_rating      DECIMAL(3,1) DEFAULT 0.0,
-  reviews_count   INT DEFAULT 0,
-
-  created_at      TIMESTAMP DEFAULT NOW(),
-  updated_at      TIMESTAMP DEFAULT NOW()
+  available       BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- =========================
--- 3) genres
+-- 2) genres
 -- =========================
 CREATE TABLE IF NOT EXISTS public.genres (
   id          BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
@@ -131,7 +156,7 @@ CREATE TABLE IF NOT EXISTS public.genres (
 );
 
 -- =========================
--- 4) book_genres (N:N)
+-- 3) book_genres (N:N)
 -- =========================
 CREATE TABLE IF NOT EXISTS public.book_genres (
   book_id  BIGINT NOT NULL REFERENCES public.books(id) ON DELETE CASCADE,
@@ -140,41 +165,47 @@ CREATE TABLE IF NOT EXISTS public.book_genres (
 );
 
 -- =========================
--- 5) reservations
+-- 4) reservations
 -- =========================
 CREATE TABLE IF NOT EXISTS public.reservations (
-  id            BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  user_id       BIGINT NOT NULL REFERENCES public.users(id),
-  book_id       BIGINT NOT NULL REFERENCES public.books(id),
-
-  status        VARCHAR(20) NOT NULL, -- reserved, borrowed, returned, cancelled
+  id            BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  book_id       BIGINT NOT NULL,
+  status        VARCHAR NOT NULL,
   reserved_at   TIMESTAMP NOT NULL DEFAULT NOW(),
   borrowed_at   TIMESTAMP,
   due_date      TIMESTAMP,
   returned_at   TIMESTAMP,
   cancelled_at  TIMESTAMP,
   notes         TEXT,
-
   created_at    TIMESTAMP DEFAULT NOW(),
-  updated_at    TIMESTAMP DEFAULT NOW()
+  updated_at    TIMESTAMP DEFAULT NOW(),
+  user_id       UUID DEFAULT auth.uid(),
+
+  CONSTRAINT reservations_book_id_fkey
+    FOREIGN KEY (book_id) REFERENCES public.books(id),
+  CONSTRAINT reservations_user_id_fkey
+    FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 
+
 -- =========================
--- 6) reviews
+-- 5) reviews
 -- =========================
 CREATE TABLE IF NOT EXISTS public.reviews (
-  id          BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  user_id     BIGINT NOT NULL REFERENCES public.users(id),
-  book_id     BIGINT NOT NULL REFERENCES public.books(id),
-
-  rating      SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
-  title       VARCHAR(255),
+  id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  rating      SMALLINT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  title       VARCHAR,
   body        TEXT NOT NULL,
   is_public   BOOLEAN NOT NULL DEFAULT TRUE,
-
   created_at  TIMESTAMP DEFAULT NOW(),
   updated_at  TIMESTAMP DEFAULT NOW(),
+  user_id     UUID DEFAULT auth.uid(),
+  book_id     BIGINT,
 
+  CONSTRAINT reviews_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT reviews_book_id_fkey FOREIGN KEY (book_id) REFERENCES public.books(id),
+
+  -- evita que um mesmo usuário tenha múltiplas reviews para o mesmo livro
   CONSTRAINT uq_reviews_user_book UNIQUE (user_id, book_id)
 );
 
@@ -222,24 +253,184 @@ INSERT INTO genres (name, description) VALUES
 ('Clássicos', 'Livros consagrados pela crítica e pela história da literatura.');
 
 ```
-Crie o arquivo na raiz do projeto:
 
-VITE_FIREBASE_API_KEY=xxxxxxxxxxxxxxxxxxxxx
-VITE_FIREBASE_AUTH_DOMAIN=xxxxxxxxxxxxxxxxxxxxx
-VITE_FIREBASE_PROJECT_ID=xxxxxxxxxxxxxxxxxxxxx
-VITE_FIREBASE_STORAGE_BUCKET=xxxxxxxxxxxxxxxxxxxxx
-VITE_FIREBASE_MESSAGING_SENDER_ID=xxxxxxxxxxxxxxxxxxxxx
-VITE_FIREBASE_APP_ID=xxxxxxxxxxxxxxxxxxxxx
+### 5.2 Crie as funções auxiliares que rodarão no banco
+Execute o SQL no Banco:
+```sql
+DROP FUNCTION IF EXISTS public.update_book_genres(bigint, text, text, boolean, numeric, bigint[]);
+DROP FUNCTION IF EXISTS public.insert_book_genres(text, text, boolean, numeric, bigint[]);
 
+CREATE OR REPLACE FUNCTION public.update_book_genres(
+  _book_id bigint,
+  _title text,
+  _author text,
+  _genre_ids bigint[]
+)
+
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  result jsonb;
+BEGIN
+  -- Verifica se livro existe
+  IF NOT EXISTS (SELECT 1 FROM public.books WHERE id = _book_id) THEN
+    RAISE EXCEPTION 'Livro não encontrado' USING ERRCODE = 'P0002';
+  END IF;
+
+  -- Atualiza somente os campos não nulos (permite partial update)
+  UPDATE public.books
+  SET
+    title = COALESCE(_title, title),
+    author = COALESCE(_author, author)
+  WHERE id = _book_id;
+
+  -- Substitui associações de gênero (se array fornecido)
+  IF _genre_ids IS NOT NULL THEN
+    -- remove associações atuais
+    DELETE FROM public.book_genres WHERE book_id = _book_id;
+
+    -- insere novas associações (se array não vazio)
+    IF array_length(_genre_ids,1) > 0 THEN
+      INSERT INTO public.book_genres (book_id, genre_id)
+      SELECT _book_id, unnest(_genre_ids);
+    END IF;
+  END IF;
+
+  -- Monta e retorna o JSONB com o livro e seus gêneros
+  SELECT row_to_json(b)::jsonb
+         || jsonb_build_object(
+              'genres',
+              COALESCE(
+                (SELECT jsonb_agg(jsonb_build_object('id', g.id, 'name', g.name))
+                 FROM public.genres g
+                 JOIN public.book_genres bg ON g.id = bg.genre_id
+                 WHERE bg.book_id = b.id),
+                '[]'::jsonb
+              )
+            )
+  INTO result
+  FROM public.books b
+  WHERE b.id = _book_id;
+
+  RETURN result;
+EXCEPTION
+  WHEN OTHERS THEN
+    -- propaga erro com mensagem para o cliente via RPC
+    RAISE;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.insert_book_genres(
+  _title       text,
+  _author      text,
+  _available   boolean,
+  _avg_rating  numeric,
+  _genre_ids   bigint[] DEFAULT NULL
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  created_book_id bigint;
+  result jsonb;
+BEGIN
+  -- Insere o livro e recebe o id
+  INSERT INTO public.books (title, author, available, avg_rating)
+  VALUES (_title, _author, _available, _avg_rating)
+  RETURNING id INTO created_book_id;
+
+  -- Insere associações em book_genres (se houver genre_ids)
+  IF _genre_ids IS NOT NULL AND array_length(_genre_ids, 1) > 0 THEN
+    INSERT INTO public.book_genres (book_id, genre_id)
+    SELECT created_book_id, unnest(_genre_ids);
+  END IF;
+
+  -- Monta o JSONB de retorno: dados do livro + array de gêneros (id + name)
+  SELECT row_to_json(b)::jsonb
+         || jsonb_build_object(
+              'genres',
+              COALESCE(
+                (SELECT jsonb_agg(jsonb_build_object('id', g.id, 'name', g.name))
+                 FROM public.genres g
+                 JOIN public.book_genres bg ON g.id = bg.genre_id
+                 WHERE bg.book_id = created_book_id),
+                '[]'::jsonb
+              )
+            )
+  INTO result
+  FROM public.books b
+  WHERE b.id = created_book_id;
+
+  RETURN result;
+END;
+$$;
+
+```
+
+### 5.3 Criar política de acesso
+Defina a tabela **reservations** como acesso RLS e defina a política
+executando:
+
+```sql
+create policy "usuario pode criar sua propria reserva"
+on reservations
+for insert
+with check (auth.uid() = user_id);
+
+create policy "usuario pode ver suas reservas"
+on reservations
+for select
+using (auth.uid() = user_id);
+
+create policy "usuario pode atualizar suas reservas"
+on reservations
+for update
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+create policy "usuario pode deletar suas reservas"
+on reservations
+for delete
+using (auth.uid() = user_id);
+
+-- Bloquear usuários anônimos
+create policy "bloquear anon"
+on reservations
+as restrictive
+for all
+to anon
+using (false)
+with check (false);
+```
+
+Crie o arquivo .env na raiz do projeto:
+# URL da API 
+VITE_API_BASE_URL=http://localhost:3001
+
+# Supabase configuration
+VITE_SUPABASE_URL=xxxxxxxxxxxxxxxxxxxxx
+VITE_SUPABASE_ANON_KEY=xxxxxxxxxxxxxxxxxxxxx
+
+SUPABASE_URL=xxxxxxxxxxxxxxxxxxxxx
+SUPABASE_ANON_KEY=xxxxxxxxxxxxxxxxxxxxx
+SUPABASE_SERVICE_ROLE_KEY=xxxxxxxxxxxxxxxxxxxxx
+SUPABASE_PROJECT_ID=xxxxxxxxxxxxxxxxxxxxx
+
+
+##
 
 ## ▶️ 6. Executar o projeto
 
-### ▶️ 6.1 Executar o FrontEnd
+###  6.1 Executar o FrontEnd
+Para rodar o front end:
 ```bash
 npm run dev
 ```
 
-### ▶️ 6.2 Executar o BackEnd
+###  6.2 Executar o BackEnd
+Para rodar o back end:
 ```bash
 npm run serve
 ```
@@ -254,6 +445,10 @@ src/
 ├── db/
 │ ├── db.js
 ├── docs/
+│ ├── books.yaml
+│ ├── genre.yaml
+│ ├── reservation.yaml
+│ ├── review.yaml
 │ ├── swagger.js
 ├── stores/
 │ ├── auth.js
