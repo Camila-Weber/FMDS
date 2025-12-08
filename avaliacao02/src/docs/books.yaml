@@ -1,14 +1,45 @@
 tags:
   - name: Books
     description: API para gerenciar livros
-  - name: Reservations
-    description: API para gerenciar reservas de livros
 
 paths:
   /books:
-    get:
-      summary: Retorna uma lista de livros
+    post:
+      summary: Cria um novo livro (usa RPC `insert_book_genres`)
       tags: [Books]
+      description: >
+        Insere um livro e associações de gêneros de forma atômica via função RPC `insert_book_genres`.
+        Campos obrigatórios: title, author, genres (array de IDs).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookCreate'
+      responses:
+        201:
+          description: Livro criado com sucesso (retorna o registro criado conforme RPC).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Book'
+        400:
+          description: "Campos obrigatórios ausentes: title, author e genres são necessários."
+        500:
+          description: Erro ao criar livro (erro do RPC ou do servidor)
+
+    get:
+      summary: Lista todos os livros
+      tags: [Books]
+      description: >
+        Retorna todos os livros ordenados por id (ascending). Cada livro contém o array `genres`
+        já **flattened** como lista de objetos `{ id, name }` (o controller transforma o resultado da relação).
       responses:
         200:
           description: Lista de livros obtida com sucesso
@@ -24,17 +55,24 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Book'
+        500:
+          description: Erro ao obter livros
 
   /books/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: ID do livro
     get:
       summary: Retorna um livro por ID
       tags: [Books]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+      description: >
+        Busca o livro pelo ID usando `book_genres ( genres ( id, name ) )`.
+        **Observação:** o resultado vindo direto da query contém a relação `book_genres`
+        (cada item com a chave `genres`), sem flatten automático feito pelo controller `getBookById`.
       responses:
         200:
           description: Livro encontrado
@@ -47,50 +85,51 @@ paths:
                     type: boolean
                     example: true
                   data:
-                    $ref: '#/components/schemas/Book'
+                    $ref: '#/components/schemas/BookWithBookGenres'
         404:
           description: Livro não encontrado
+        500:
+          description: Erro ao obter livro
 
     put:
-      summary: Atualiza um livro por ID
+      summary: Atualiza um livro por ID (usa RPC `update_book_genres`)
       tags: [Books]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+      description: >
+        Atualiza campos do livro e as associações de gêneros de forma atômica via RPC `update_book_genres`.
+        Campos obrigatórios no corpo: title, author e genres (array de IDs).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookUpdate'
       responses:
         200:
-          description: Livro atualizado com sucesso
+          description: Livro atualizado com sucesso (retorna o registro atualizado conforme RPC)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Book'
+        400:
+          description: "Campos obrigatórios ausentes: title, author e genres são necessários."
+        404:
+          description: Livro não encontrado ou RPC não retornou dados
+        500:
+          description: Erro ao atualizar livro
 
     delete:
       summary: Deleta um livro por ID
       tags: [Books]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+      description: Remove o livro da tabela `books` por `id`.
       responses:
         200:
           description: Livro deletado com sucesso
-
-  /reservations:
-    get:
-      summary: Lista reservas com status "reservado" para um usuário
-      tags: [Reservations]
-      parameters:
-        - name: user_id
-          in: query
-          required: true
-          description: UID do usuário (Firebase/Supabase)
-          schema:
-            type: string
-      responses:
-        200:
-          description: Lista de reservas obtida com sucesso
           content:
             application/json:
               schema:
@@ -99,148 +138,14 @@ paths:
                   success:
                     type: boolean
                     example: true
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Reservation'
-        400:
-          description: user_id ausente
-        500:
-          description: Erro ao obter reservas
-
-    post:
-      summary: Cria uma nova reserva
-      tags: [Reservations]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ReservationCreate'
-      responses:
-        201:
-          description: Reserva criada com sucesso
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    $ref: '#/components/schemas/Reservation'
-        400:
-          description: Dados inválidos
-        500:
-          description: Erro ao criar reserva
-
-  /reservations/{id}:
-    get:
-      summary: Retorna uma reserva por ID (do usuário informado)
-      tags: [Reservations]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-        - name: user_id
-          in: query
-          required: true
-          description: UID do usuário dono da reserva
-          schema:
-            type: string
-      responses:
-        200:
-          description: Reserva encontrada
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    $ref: '#/components/schemas/Reservation'
-        400:
-          description: user_id ausente
+                  message:
+                    type: string
+                    example: "Livro deletado com sucesso"
         404:
-          description: Reserva não encontrada
+          description: Livro não encontrado
         500:
-          description: Erro ao obter reserva
+          description: Erro ao deletar livro
 
-    put:
-      summary: Atualiza campos de uma reserva (apenas do próprio usuário)
-      tags: [Reservations]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ReservationUpdate'
-      responses:
-        200:
-          description: Reserva atualizada com sucesso
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    $ref: '#/components/schemas/Reservation'
-        400:
-          description: Corpo inválido
-        404:
-          description: Reserva não encontrada
-        500:
-          description: Erro ao atualizar reserva
-
-  /reservations/{id}/return:
-    put:
-      summary: Marca uma reserva como devolvida
-      tags: [Reservations]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ReservationReturn'
-      responses:
-        200:
-          description: Reserva marcada como devolvida
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    $ref: '#/components/schemas/Reservation'
-        400:
-          description: user_id ausente
-        404:
-          description: Reserva não encontrada
-        500:
-          description: Erro ao marcar reserva como devolvida
 
 components:
   schemas:
@@ -255,85 +160,80 @@ components:
           type: string
         available:
           type: boolean
-        # ... demais campos do seu modelo
+        avg_rating:
+          type: number
+          format: float
+        genres:
+          type: array
+          description: "Array de gêneros **flattened** no formato [{ id, name }]"
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
 
-    Reservation:
+    BookWithBookGenres:
       type: object
       properties:
         id:
           type: integer
-        user_id:
+        title:
           type: string
-          description: UID do usuário
-        book_id:
-          type: integer
-        status:
+        author:
           type: string
-          enum: [reservado, devolvido]
-        notes:
-          type: string
-          nullable: true
-        reserved_at:
-          type: string
-          format: date-time
-        borrowed_at:
-          type: string
-          format: date-time
-          nullable: true
-        due_date:
-          type: string
-          format: date-time
-        returned_at:
-          type: string
-          format: date-time
-          nullable: true
-        created_at:
-          type: string
-          format: date-time
-          nullable: true
-        updated_at:
-          type: string
-          format: date-time
-          nullable: true
+        available:
+          type: boolean
+        avg_rating:
+          type: number
+          format: float
+        book_genres:
+          type: array
+          description: >
+            Estrutura retornada pela query em `getBookById`: cada item tem a chave `genres`
+            com o objeto de gênero — ex.: `[ { "genres": { "id": 4, "name": "X" } } ]`.
+          items:
+            type: object
+            properties:
+              genres:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
 
-    ReservationCreate:
+    BookCreate:
       type: object
       required:
-        - user_id
-        - book_id
+        - title
+        - author
+        - genres
       properties:
-        user_id:
+        title:
           type: string
-        book_id:
-          type: integer
-        days:
-          type: integer
-          example: 7
-        notes:
+        author:
           type: string
-          nullable: true
+        genres:
+          type: array
+          description: "Array de IDs de gêneros (ex.: [4, 6])"
+          items:
+            type: integer
 
-    ReservationUpdate:
+    BookUpdate:
       type: object
       required:
-        - user_id
+        - title
+        - author
+        - genres
       properties:
-        user_id:
+        title:
           type: string
-        status:
+        author:
           type: string
-          enum: [reservado, devolvido]
-        notes:
-          type: string
-          nullable: true
-        due_date:
-          type: string
-          format: date-time
-
-    ReservationReturn:
-      type: object
-      required:
-        - user_id
-      properties:
-        user_id:
-          type: string
+        genres:
+          type: array
+          description: "Array de IDs de gêneros (ex.: [4, 6])"
+          items:
+            type: integer
